@@ -1,4 +1,7 @@
 # CHANGELOG
+## 0.1.1
+
+* migrating source code and documentation from [cartography](https://github.com/blab/cartography) to [pathogen-embed](https://github.com/blab/pathogen-embed)
 
 ## 0.1.0
 
