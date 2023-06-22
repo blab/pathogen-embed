@@ -5,7 +5,7 @@ Create reduced dimension embeddings for pathogen sequences
 pathogen-embed is an open-source software for scientists, epidemiologists, etc. to run reduced dimension embeddings (PCA, MDS, t-SNE, and UMAP) on viral populations. This is the source code from the paper Cartography written by Sravani Nanduri and John Huddleston.
 
 [Documentation](https://blab.github.io/pathogen-embed/)\
-[Source Code](https://github.com/blab/cartography/tree/master/source)\
+[Source Code](https://github.com/blab/pathogen-embed/tree/main)\
 [Bug reports](https://github.com/blab/pathogen-embed/issues)
 
 # Build documentation  

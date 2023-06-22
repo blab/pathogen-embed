@@ -18,7 +18,7 @@ setup(
     project_urls = {
         "Documentation": "https://blab.github.io/pathogen-embed/",
         "Bug Reports": "https://github.com/blab/pathogen-embed/issues",
-        "Source Code": "https://github.com/blab/cartography/tree/master/source",
+        "Source Code": "https://github.com/blab/pathogen-embed/tree/main",
 	"Change Log": "https://github.com/blab/pathogen-embed/tree/master/CHANGES.md",
     },
     package_dir={"": "src"},
