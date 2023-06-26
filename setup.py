@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pathogen-embed',
-    version='0.1.1',
+    version='1.0.0',
     description='Reduced dimension embeddings for pathogen sequences',
     url='https://github.com/blab/pathogen-embed/',
     author='Sravani Nanduri <nandsra@cs.washington.edu> , John Huddleston <huddlej@gmail.com>',
@@ -42,7 +42,9 @@ setup(
     ],
     entry_points = {
         "console_scripts": [
-            "embed = embed.__main__:main",
+            "pathogen-embed = pathogen_embed.__main__:main",
+            "pathogen-distance = pathogen_distance.__main__:main",
+            "pathogen-cluster = pathogen_cluster.__main__:main"
         ]
     }
 )

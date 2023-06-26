@@ -4,26 +4,22 @@ pathogen-embed.
 Reduced dimension embeddings for pathogen sequences.
 """
 
-__version__ = "0.0.2"
+__version__ = "1.0.0"
 __author__ = 'Sravani Nanduri, John Huddleston'
 __credits__ = 'Bedford Lab, Vaccine and Infectious Disease Division, Fred Hutchinson Cancer Research Center, Seattle, WA, USA'
 
 import argparse
 import sys
-from .embed import embed, get_hamming_distances
+from .pathogen_embed import pathogen_embed
 
 def make_parser():
     parser = argparse.ArgumentParser(description = "Reduced dimension embeddings for pathogen sequences", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+    parser.add_argument("--alignment", help="an aligned FASTA file to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix.")
     parser.add_argument("--distance-matrix", help="a distance matrix that can be read in by pandas, index column as row 0")
     parser.add_argument("--separator", default=",", help="separator between columns in the given distance matrix")
-    parser.add_argument("--alignment", help="an aligned FASTA file to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix.")
-    parser.add_argument("--cluster-data", help="The file (same separator as distance-matrix) that contains the distance threshold by which to cluster data in the embedding and assign labels given via HDBSCAN (https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html). If no value is given in cluster-data or cluster-threshold, the default distance threshold of 0.0 will be used. If any additional columns in this file match embedding-specific parameters (e.g., 'n_components' or 'learning_rate'), the values from the first record of this file will override default values or values provided by the command line arguments.")
-    parser.add_argument("--cluster-min-size", type=int, default=5, help="minimum cluster size for HDBSCAN")
-    parser.add_argument("--cluster-min-samples", type=int, default=5, help="minimum number of sample to seed a cluster for HDBSCAN. Lowering this value reduces number of samples that do not get clustered.")
-    parser.add_argument("--cluster-threshold", type=float, help="The float value for the distance threshold by which to cluster data in the embedding and assign labels via HDBSCAN. If no value is given in cluster-data or cluster-threshold, the default distance threshold of 0.0 will be used.")
-    parser.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
     parser.add_argument("--indel-distance", action="store_true", help="include insertions/deletions in genetic distance calculations")
+    parser.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
     parser.add_argument("--output-dataframe", help="a csv file outputting the embedding with the strain name and its components.")
     parser.add_argument("--output-figure", help="outputs a PNG plot of the embedding")
 
@@ -55,7 +51,7 @@ def make_parser():
 def run(argv):
     args = make_parser().parse_args(argv)
     try:
-        return embed(args)
+        return pathogen_embed(args)
     except Exception as error:
         print(error, file=sys.stderr)
         sys.exit(1)
