@@ -42,9 +42,9 @@ setup(
     ],
     entry_points = {
         "console_scripts": [
-            "pathogen-embed = pathogen_embed.__main__:main",
-            "pathogen-distance = pathogen_distance.__main__:main",
-            "pathogen-cluster = pathogen_cluster.__main__:main"
+            "pathogen-embed = pathogen_embed.__main__:run_embed",
+            "pathogen-distance = pathogen_embed.__main__:run_distance",
+            "pathogen-cluster = pathogen_embed.__main__:run_cluster"
         ]
     }
 )

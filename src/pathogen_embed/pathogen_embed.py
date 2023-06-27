@@ -1,7 +1,7 @@
 import argparse
-
 import Bio.SeqIO
 from collections import OrderedDict
+import hdbscan
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -12,6 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
 from umap import UMAP
+
 
 def find_ranges(positions):
     """
@@ -172,7 +173,7 @@ def get_hamming_distances(genomes, count_indels=False):
     return hamming_distances
 
 
-def pathogen_embed(args):
+def embed(args):
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
 
@@ -206,6 +207,21 @@ def pathogen_embed(args):
             distance_matrix = pd.DataFrame(squareform(hamming_distances))
             distance_matrix.index = sequence_names
 
+    # Load embedding and cluster parameters from an external CSV file, if
+    # possible.
+    embedding_parameters = None
+    if args.embedding_parameters is not None:
+        embed_df = pd.read_csv(args.embedding_parameters)
+
+        # Get a dictionary of additional parameters provided by the cluster data
+        # to override defaults for the current method.
+        embedding_paramters = embed_df.to_dict("records")[0]
+
+    if embedding_parameters is not None and "components" in embedding_parameters:
+        n_components = int(embedding_parameters["components"])
+        embedding_parameters["n_components"] = n_components
+    else:
+        n_components = args.components
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
@@ -233,9 +249,9 @@ def pathogen_embed(args):
     if args.command == "t-sne":
         embedding_class = TSNE
         embedding_parameters = {
-            "n_components": args.components,
+            "n_components": n_components,
             "metric": "precomputed",
-            "init": principalComponents[:, :args.components],
+            "init": principalComponents[:, :n_components],
             "perplexity": args.perplexity,
             "learning_rate": args.learning_rate,
             "random_state" : args.random_seed,
@@ -246,7 +262,7 @@ def pathogen_embed(args):
         embedding_parameters = {
             "n_neighbors": args.nearest_neighbors,
             "min_dist": args.min_dist,
-            "n_components": args.components,
+            "n_components": n_components,
             "init": "spectral",
             "random_state" : args.random_seed
         }
@@ -254,17 +270,29 @@ def pathogen_embed(args):
         embedding_class = MDS
         embedding_parameters = {
             "dissimilarity": "precomputed",
-            "n_components": args.components,
+            "n_components": n_components,
             "n_jobs": 1,
             "n_init": 2
         }
+
+    # Override defaults with parameter values passed through embedding parameters, if
+    # possible.
+    if embedding_parameters is not None and args.command != "pca":
+        for key, value in embedding_parameters.items():
+            if key in embedding_parameters:
+                value_type = type(embedding_parameters[key])
+                print(
+                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.cluster_data}'.",
+                    file=sys.stderr
+                )
+                embedding_parameters[key] = value_type(value)
 
     if args.command != "pca":
         embedder = embedding_class(**embedding_parameters)
         embedding = embedder.fit_transform(distance_matrix)
 
         # Output Embedding
-            # create dictionary to be "wrapped" by write_json
+        # create dictionary to be "wrapped" by write_json
 
         embedding_df = pd.DataFrame(embedding)
         embedding_df.index = list(distance_matrix.index)
@@ -299,3 +327,59 @@ def pathogen_embed(args):
         )
         plt.savefig(args.output_figure)
         plt.close()
+
+def cluster(args):
+
+    embedding_df = pd.read_csv(args.embedding, index_col=0)
+
+    clustering_parameters = {
+        **({"min_cluster_size": args.min_size} if args.min_size is not None else {}),
+        **({"min_samples": args.min_samples} if args.min_samples is not None else {}),
+        **({"cluster_selection_epsilon": args.distance_threshold} if args.distance_threshold is not None else {})
+    }
+
+    clusterer = hdbscan.HDBSCAN(**clustering_parameters)
+
+    clusterer.fit(embedding_df)
+    embedding_df[f"label_{args.label_attribute}"] = clusterer.labels_.astype(str)
+
+    if args.output_figure is not None:
+        
+        plot_data = {
+            "x": embedding_df.to_numpy()[:, 0],
+            "y": embedding_df.to_numpy()[:, 1],
+        }
+
+        plot_data["cluster"] = clusterer.labels_.astype(str)
+
+        plot_df = pd.DataFrame(plot_data)
+        ax = sns.scatterplot(
+            data=plot_df,
+            x="x",
+            y="y",
+            hue="cluster",
+            alpha=0.5,
+        )
+        plt.savefig(args.output_figure)
+        plt.close()
+    
+    if args.output_dataframe is not None:
+        embedding_df.to_csv(args.output_dataframe, index_label="strain")
+        
+def distance(args):
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = list(sequences_by_name.keys())
+    
+    hamming_distances = get_hamming_distances(
+        list(sequences_by_name.values()),
+        args.indel_distance,
+    )
+    distance_matrix = pd.DataFrame(squareform(hamming_distances))
+    distance_matrix.index = sequence_names
+    distance_matrix.columns = distance_matrix.index
+    
+    distance_matrix.to_csv(args.output)
