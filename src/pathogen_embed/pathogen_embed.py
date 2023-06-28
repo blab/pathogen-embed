@@ -348,7 +348,7 @@ def cluster(args):
     clusterer = hdbscan.HDBSCAN(**clustering_parameters)
 
     clusterer.fit(embedding_df)
-    embedding_df[f"label_{args.label_attribute}"] = clusterer.labels_.astype(str)
+    embedding_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:
         
