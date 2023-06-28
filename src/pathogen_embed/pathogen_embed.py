@@ -215,19 +215,18 @@ def embed(args):
             distance_matrix = pd.DataFrame(squareform(hamming_distances))
             distance_matrix.index = sequence_names
 
-    # Load embedding and cluster parameters from an external CSV file, if
-    # possible.
-    embedding_parameters = None
+    # Load embedding parameters from an external CSV file, if possible.
+    external_embedding_parameters = None
     if args.embedding_parameters is not None:
-        embed_df = pd.read_csv(args.embedding_parameters)
+        external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
-        # Get a dictionary of additional parameters provided by the cluster data
-        # to override defaults for the current method.
-        embedding_paramters = embed_df.to_dict("records")[0]
+        # Get a dictionary of additional parameters provided by the external
+        # file to override defaults for the current method.
+        external_embedding_parameters = external_embedding_parameters_df.to_dict("records")[0]
 
-    if embedding_parameters is not None and "components" in embedding_parameters:
-        n_components = int(embedding_parameters["components"])
-        embedding_parameters["n_components"] = n_components
+    if external_embedding_parameters is not None and "components" in external_embedding_parameters:
+        n_components = int(external_embedding_parameters["components"])
+        external_embedding_parameters["n_components"] = n_components
     else:
         n_components = args.components
 
@@ -285,12 +284,12 @@ def embed(args):
 
     # Override defaults with parameter values passed through embedding parameters, if
     # possible.
-    if embedding_parameters is not None and args.command != "pca":
-        for key, value in embedding_parameters.items():
+    if external_embedding_parameters is not None and args.command != "pca":
+        for key, value in external_embedding_parameters.items():
             if key in embedding_parameters:
                 value_type = type(embedding_parameters[key])
                 print(
-                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.cluster_data}'.",
+                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.embedding_parameters}'.",
                     file=sys.stderr
                 )
                 embedding_parameters[key] = value_type(value)
