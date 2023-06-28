@@ -19,7 +19,7 @@ setup(
         "Documentation": "https://blab.github.io/pathogen-embed/",
         "Bug Reports": "https://github.com/blab/pathogen-embed/issues",
         "Source Code": "https://github.com/blab/pathogen-embed/tree/main",
-        "Change Log": "https://github.com/blab/pathogen-embed/tree/master/CHANGES.md",
+        "Change Log": "https://github.com/blab/pathogen-embed/tree/main/CHANGES.md",
     },
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=['test']),
