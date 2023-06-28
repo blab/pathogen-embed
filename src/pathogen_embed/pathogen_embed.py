@@ -245,7 +245,7 @@ def embed(args):
 
 
         #performing PCA on my pandas dataframe
-        pca = PCA(n_components=args.components, svd_solver='full')
+        pca = PCA(n_components=n_components, svd_solver='full')
         principalComponents = pca.fit_transform(genomes_df)
 
         # Create a data frame from the PCA embedding.
@@ -305,7 +305,7 @@ def embed(args):
         embedding_df.index = list(distance_matrix.index)
 
     if args.command == "mds" or args.command == "pca":
-        embedding_df.columns=[args.command + str(i) for i in range(1, args.components + 1)]
+        embedding_df.columns=[args.command + str(i) for i in range(1, n_components + 1)]
     else:
         embedding_df.columns = [args.command.replace('-', '') + "_x" , args.command.replace('-', '') + "_y"]
 
@@ -313,7 +313,7 @@ def embed(args):
 
         #add explained variance as the first row of the dataframe
         explained_variance = pd.DataFrame([round(pca.explained_variance_ratio_[i],4) for i in range(0,len(pca.explained_variance_ratio_))], columns=["explained variance"])
-        explained_variance["principal components"] = [i for i in range(1, args.components + 1)]
+        explained_variance["principal components"] = [i for i in range(1, n_components + 1)]
         explained_variance.to_csv(args.explained_variance, index=False)
 
     if args.output_dataframe is not None:
