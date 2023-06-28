@@ -207,7 +207,6 @@ def embed(args):
         sequence_names = list(sequences_by_name.keys())
         if args.command != "pca" and distance_matrix is None:
             # Calculate Distance Matrix
-            
             hamming_distances = get_hamming_distances(
                 list(sequences_by_name.values()),
                 args.indel_distance,
@@ -351,7 +350,7 @@ def cluster(args):
     embedding_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:
-        
+
         plot_data = {
             "x": embedding_df.to_numpy()[:, 0],
             "y": embedding_df.to_numpy()[:, 1],
@@ -369,10 +368,10 @@ def cluster(args):
         )
         plt.savefig(args.output_figure)
         plt.close()
-    
+
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
-        
+
 def distance(args):
     sequences_by_name = OrderedDict()
 
@@ -380,7 +379,7 @@ def distance(args):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
     sequence_names = list(sequences_by_name.keys())
-    
+
     hamming_distances = get_hamming_distances(
         list(sequences_by_name.values()),
         args.indel_distance,
@@ -388,5 +387,5 @@ def distance(args):
     distance_matrix = pd.DataFrame(squareform(hamming_distances))
     distance_matrix.index = sequence_names
     distance_matrix.columns = distance_matrix.index
-    
+
     distance_matrix.to_csv(args.output)
