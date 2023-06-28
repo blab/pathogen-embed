@@ -28,7 +28,11 @@ setup(
                       "biopython",
                       'seaborn',
                       'scikit-learn',
-                      'umap-learn',
+                      'umap-learn ==0.5.*',
+                      # Pin Numba at maximum supported version for the pinned umap-learn version.
+                      # For more details see:
+                      # https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+                      'numba <0.59.0',
                       'matplotlib',
                       'hdbscan'
                       ],

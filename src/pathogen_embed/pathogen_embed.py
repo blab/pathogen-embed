@@ -1,3 +1,11 @@
+# Ignore warnings from Numba deprecation:
+# https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+# Numba is required by UMAP.
+from numba.core.errors import NumbaDeprecationWarning
+import warnings
+
+warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+
 import argparse
 import Bio.SeqIO
 from collections import OrderedDict
