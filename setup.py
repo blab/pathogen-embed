@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pathogen-embed',
-    version='0.1.1',
+    version='1.0.0',
     description='Reduced dimension embeddings for pathogen sequences',
     url='https://github.com/blab/pathogen-embed/',
     author='Sravani Nanduri <nandsra@cs.washington.edu> , John Huddleston <huddlej@gmail.com>',
@@ -19,17 +19,20 @@ setup(
         "Documentation": "https://blab.github.io/pathogen-embed/",
         "Bug Reports": "https://github.com/blab/pathogen-embed/issues",
         "Source Code": "https://github.com/blab/pathogen-embed/tree/main",
-	"Change Log": "https://github.com/blab/pathogen-embed/tree/master/CHANGES.md",
+        "Change Log": "https://github.com/blab/pathogen-embed/tree/main/CHANGES.md",
     },
     package_dir={"": "src"},
-	packages = find_packages(where="src", exclude=['test']),
-    #packages=['seaborn', 'scikit-learn', 'umap-learn', 'matplotlib', 'pandas', 'numpy', 'hdbscan'],
+    packages=find_packages(where="src", exclude=['test']),
     install_requires=['numpy',
                       'pandas',
                       "biopython",
                       'seaborn',
                       'scikit-learn',
-                      'umap-learn',
+                      'umap-learn ==0.5.*',
+                      # Pin Numba at maximum supported version for the pinned umap-learn version.
+                      # For more details see:
+                      # https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+                      'numba <0.59.0',
                       'matplotlib',
                       'hdbscan'
                       ],
@@ -42,7 +45,9 @@ setup(
     ],
     entry_points = {
         "console_scripts": [
-            "embed = embed.__main__:main",
+            "pathogen-embed = pathogen_embed.__main__:run_embed",
+            "pathogen-distance = pathogen_embed.__main__:run_distance",
+            "pathogen-cluster = pathogen_embed.__main__:run_cluster"
         ]
     }
 )

@@ -1,5 +1,12 @@
-import argparse
+# Ignore warnings from Numba deprecation:
+# https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+# Numba is required by UMAP.
+from numba.core.errors import NumbaDeprecationWarning
+import warnings
 
+warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+
+import argparse
 import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
@@ -175,8 +182,6 @@ def get_hamming_distances(genomes, count_indels=False):
 
 
 def embed(args):
-    # TODO: Create a default cluster distance threshold if none given.
-
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
 
@@ -203,45 +208,24 @@ def embed(args):
         if args.command != "pca" and distance_matrix is None:
             # Calculate Distance Matrix
             hamming_distances = get_hamming_distances(
-                sequences_by_name.values(),
+                list(sequences_by_name.values()),
                 args.indel_distance,
             )
             distance_matrix = pd.DataFrame(squareform(hamming_distances))
             distance_matrix.index = sequence_names
 
-    # Calculate Embedding
-    clusterer = None
+    # Load embedding parameters from an external CSV file, if possible.
+    external_embedding_parameters = None
+    if args.embedding_parameters is not None:
+        external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
-    if args.cluster_threshold is not None:
-        cluster_threshold = float(args.cluster_threshold)
-        clusterer = hdbscan.HDBSCAN(
-            min_cluster_size=args.cluster_min_size,
-            min_samples=args.cluster_min_samples,
-            cluster_selection_epsilon=cluster_threshold,
-        )
+        # Get a dictionary of additional parameters provided by the external
+        # file to override defaults for the current method.
+        external_embedding_parameters = external_embedding_parameters_df.to_dict("records")[0]
 
-    # Load embedding and cluster parameters from an external CSV file, if
-    # possible.
-    cluster_data = None
-    if args.cluster_data is not None:
-        max_df = pd.read_csv(args.cluster_data)
-
-        # Look for cluster distance threshold in the cluster data, if the user
-        # has not provided a value from the command line.
-        if args.cluster_threshold is None:
-            clusterer = hdbscan.HDBSCAN(
-                min_cluster_size=args.cluster_min_size,
-                min_samples=args.cluster_min_samples,
-                cluster_selection_epsilon=float(max_df.where(max_df["method"] == args.command).dropna(subset = ['distance_threshold'])[["distance_threshold"]].values.tolist()[0][0])
-            )
-
-        # Get a dictionary of additional parameters provided by the cluster data
-        # to override defaults for the current method.
-        cluster_data = max_df.to_dict("records")[0]
-
-    if cluster_data is not None and "components" in cluster_data:
-        n_components = int(cluster_data["components"])
-        cluster_data["n_components"] = n_components
+    if external_embedding_parameters is not None and "components" in external_embedding_parameters:
+        n_components = int(external_embedding_parameters["components"])
+        external_embedding_parameters["n_components"] = n_components
     else:
         n_components = args.components
 
@@ -258,8 +242,9 @@ def embed(args):
         genomes_df = pd.DataFrame(numbers)
         genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
 
+
         #performing PCA on my pandas dataframe
-        pca = PCA(n_components=n_components, svd_solver='full') #can specify n, since with no prior knowledge, I use None
+        pca = PCA(n_components=n_components, svd_solver='full')
         principalComponents = pca.fit_transform(genomes_df)
 
         # Create a data frame from the PCA embedding.
@@ -270,9 +255,9 @@ def embed(args):
     if args.command == "t-sne":
         embedding_class = TSNE
         embedding_parameters = {
-            "n_components": args.components,
+            "n_components": n_components,
             "metric": "precomputed",
-            "init": principalComponents[:, :args.components],
+            "init": principalComponents[:, :n_components],
             "perplexity": args.perplexity,
             "learning_rate": args.learning_rate,
             "random_state" : args.random_seed,
@@ -283,7 +268,7 @@ def embed(args):
         embedding_parameters = {
             "n_neighbors": args.nearest_neighbors,
             "min_dist": args.min_dist,
-            "n_components": args.components,
+            "n_components": n_components,
             "init": "spectral",
             "random_state" : args.random_seed
         }
@@ -291,19 +276,19 @@ def embed(args):
         embedding_class = MDS
         embedding_parameters = {
             "dissimilarity": "precomputed",
-            "n_components": args.components,
+            "n_components": n_components,
             "n_jobs": 1,
             "n_init": 2
         }
 
-    # Override defaults with parameter values passed through cluster data, if
+    # Override defaults with parameter values passed through embedding parameters, if
     # possible.
-    if cluster_data is not None and args.command != "pca":
-        for key, value in cluster_data.items():
+    if external_embedding_parameters is not None and args.command != "pca":
+        for key, value in external_embedding_parameters.items():
             if key in embedding_parameters:
                 value_type = type(embedding_parameters[key])
                 print(
-                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.cluster_data}'.",
+                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.embedding_parameters}'.",
                     file=sys.stderr
                 )
                 embedding_parameters[key] = value_type(value)
@@ -313,7 +298,7 @@ def embed(args):
         embedding = embedder.fit_transform(distance_matrix)
 
         # Output Embedding
-            # create dictionary to be "wrapped" by write_json
+        # create dictionary to be "wrapped" by write_json
 
         embedding_df = pd.DataFrame(embedding)
         embedding_df.index = list(distance_matrix.index)
@@ -330,13 +315,6 @@ def embed(args):
         explained_variance["principal components"] = [i for i in range(1, n_components + 1)]
         explained_variance.to_csv(args.explained_variance, index=False)
 
-    if clusterer is not None:
-        clusterer_default = hdbscan.HDBSCAN()
-        clusterer.fit(embedding_df)
-        clusterer_default.fit(embedding_df)
-        embedding_df[f"{args.command}_label"] = clusterer.labels_.astype(str)
-        embedding_df[f"{args.command}_label_default"] = clusterer_default.labels_.astype(str)
-
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
 
@@ -346,10 +324,39 @@ def embed(args):
             "y": embedding[:, 1],
         }
 
-        if clusterer is not None:
-            plot_data["cluster"] = clusterer.labels_.astype(str)
-        else:
-            plot_data["cluster"] = "0"
+        plot_df = pd.DataFrame(plot_data)
+        ax = sns.scatterplot(
+            data=plot_df,
+            x="x",
+            y="y",
+            alpha=0.5,
+        )
+        plt.savefig(args.output_figure)
+        plt.close()
+
+def cluster(args):
+
+    embedding_df = pd.read_csv(args.embedding, index_col=0)
+
+    clustering_parameters = {
+        **({"min_cluster_size": args.min_size} if args.min_size is not None else {}),
+        **({"min_samples": args.min_samples} if args.min_samples is not None else {}),
+        **({"cluster_selection_epsilon": args.distance_threshold} if args.distance_threshold is not None else {})
+    }
+
+    clusterer = hdbscan.HDBSCAN(**clustering_parameters)
+
+    clusterer.fit(embedding_df)
+    embedding_df[args.label_attribute] = clusterer.labels_.astype(str)
+
+    if args.output_figure is not None:
+
+        plot_data = {
+            "x": embedding_df.to_numpy()[:, 0],
+            "y": embedding_df.to_numpy()[:, 1],
+        }
+
+        plot_data["cluster"] = clusterer.labels_.astype(str)
 
         plot_df = pd.DataFrame(plot_data)
         ax = sns.scatterplot(
@@ -361,3 +368,24 @@ def embed(args):
         )
         plt.savefig(args.output_figure)
         plt.close()
+
+    if args.output_dataframe is not None:
+        embedding_df.to_csv(args.output_dataframe, index_label="strain")
+
+def distance(args):
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = list(sequences_by_name.keys())
+
+    hamming_distances = get_hamming_distances(
+        list(sequences_by_name.values()),
+        args.indel_distance,
+    )
+    distance_matrix = pd.DataFrame(squareform(hamming_distances))
+    distance_matrix.index = sequence_names
+    distance_matrix.columns = distance_matrix.index
+
+    distance_matrix.to_csv(args.output)
