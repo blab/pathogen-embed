@@ -1,10 +1,16 @@
 # CHANGELOG
+
 ## 1.0.0
-* Creating separate commands for embedding, clustering, and distance matrix creation (pathogen-embed, pathogen-cluster, pathogen-distance) ([28aa891](https://github.com/blab/pathogen-embed/commit/28aa8912a24138a3dcd54fa43f90a5e10b4aa86e))
+
+### Major Changes
+
+* Created separate commands for embedding, clustering, and distance matrix creation (pathogen-embed, pathogen-cluster, pathogen-distance) ([#2](https://github.com/blab/pathogen-embed/pull/2))
 
 ## 0.1.1
 
-* migrating source code and documentation from [cartography](https://github.com/blab/cartography) to [pathogen-embed](https://github.com/blab/pathogen-embed)
+### Bug Fixes
+
+* Migrated source code and documentation from [cartography](https://github.com/blab/cartography) to [pathogen-embed](https://github.com/blab/pathogen-embed)
 
 ## 0.1.0
 
