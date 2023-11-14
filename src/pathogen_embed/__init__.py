@@ -6,6 +6,6 @@ Reduced dimension embeddings for pathogen sequences.
 
 from .__main__ import make_parser_cluster, make_parser_distance, make_parser_embed
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = 'Sravani Nanduri, John Huddleston'
 __credits__ = 'Bedford Lab, Vaccine and Infectious Disease Division, Fred Hutchinson Cancer Research Center, Seattle, WA, USA'

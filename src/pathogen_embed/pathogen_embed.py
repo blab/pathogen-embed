@@ -315,6 +315,11 @@ def embed(args):
         explained_variance["principal components"] = [i for i in range(1, n_components + 1)]
         explained_variance.to_csv(args.explained_variance, index=False)
 
+    if args.command == "mds":
+        if args.stress:
+            stress = pd.DataFrame.from_dict({"stress" : embedding.stress_})
+            print(stress)
+            stress.to_csv(args.stress, index=False)
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
 

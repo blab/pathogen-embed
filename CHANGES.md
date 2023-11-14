@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 1.1.0
+
+### Features
+* Add stress value dataframe to MDS arguments to relay fitness of the embedding
+
 ## 1.0.0
 
 ### Major Changes

@@ -36,6 +36,7 @@ def make_parser_embed():
 
     mds = subparsers.add_parser("mds", description="Multidimensional Scaling")
     mds.add_argument("--components", default=10, type=int, help="the number of components for MDS")
+    mds.add_argument("--stress", help="the path for the CSV stress for the embedding")
 
     return parser
 
