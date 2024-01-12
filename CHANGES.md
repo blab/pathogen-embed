@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 1.1.1
+
+### Bug Fixes
+
+* Fix MDS stress output
+
 ## 1.1.0
 
 ### Features

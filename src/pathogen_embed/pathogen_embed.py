@@ -317,9 +317,9 @@ def embed(args):
 
     if args.command == "mds":
         if args.stress:
-            stress = pd.DataFrame.from_dict({"stress" : embedding.stress_})
-            print(stress)
-            stress.to_csv(args.stress, index=False)
+            with open(args.stress, "w", encoding="utf-8") as oh:
+                print(embedder.stress_, file=oh)
+
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
 
