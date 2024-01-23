@@ -4,7 +4,7 @@ Run pathogen-embed with t-SNE on a H3N2 HA alignment.
   >   --alignment $TESTDIR/data/h3n2_ha_alignment.fasta \
   >   --output-dataframe embed_t-sne.csv \
   >   t-sne \
-  >   --perplexity 100 \
+  >   --perplexity 25 \
   >   --learning-rate 100
 
 There should be one record in the embedding per input sequence in the alignment.
