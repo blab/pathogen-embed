@@ -270,7 +270,8 @@ def embed(args):
             "min_dist": args.min_dist,
             "n_components": n_components,
             "init": "spectral",
-            "random_state" : args.random_seed
+            "random_state" : args.random_seed,
+            "n_jobs": 1,
         }
     elif args.command == "mds":
         embedding_class = MDS
