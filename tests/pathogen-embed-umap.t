@@ -1,0 +1,12 @@
+Run pathogen-embed with UMAP on a H3N2 HA alignment.
+
+  $ pathogen-embed \
+  >   --alignment $TESTDIR/data/h3n2_ha_alignment.fasta \
+  >   --output-dataframe embed_umap.csv \
+  >   umap \
+  >   --min-dist 0.1 \
+  >   --nearest-neighbors 25
+
+There should be one record in the embedding per input sequence in the alignment.
+
+  $ [[ $(sed 1d embed_umap.csv | wc -l) == $(grep "^>" $TESTDIR/data/h3n2_ha_alignment.fasta | wc -l) ]]

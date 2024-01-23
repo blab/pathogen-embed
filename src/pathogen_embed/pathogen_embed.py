@@ -244,7 +244,11 @@ def embed(args):
 
 
         #performing PCA on my pandas dataframe
-        pca = PCA(n_components=n_components, svd_solver='full')
+        pca = PCA(
+            n_components=n_components,
+            svd_solver='full',
+            random_state=args.random_seed,
+        )
         principalComponents = pca.fit_transform(genomes_df)
 
         # Create a data frame from the PCA embedding.
@@ -261,7 +265,6 @@ def embed(args):
             "perplexity": args.perplexity,
             "learning_rate": args.learning_rate,
             "random_state" : args.random_seed,
-            "square_distances": True,
         }
     elif args.command == "umap":
         embedding_class = UMAP
@@ -270,7 +273,8 @@ def embed(args):
             "min_dist": args.min_dist,
             "n_components": n_components,
             "init": "spectral",
-            "random_state" : args.random_seed
+            "random_state" : args.random_seed,
+            "n_jobs": 1,
         }
     elif args.command == "mds":
         embedding_class = MDS
@@ -278,7 +282,9 @@ def embed(args):
             "dissimilarity": "precomputed",
             "n_components": n_components,
             "n_jobs": 1,
-            "n_init": 2
+            "n_init": 2,
+            "random_state" : args.random_seed,
+            "normalized_stress": False,
         }
 
     # Override defaults with parameter values passed through embedding parameters, if

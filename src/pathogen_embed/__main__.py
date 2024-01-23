@@ -31,7 +31,7 @@ def make_parser_embed():
 
     umap = subparsers.add_parser("umap", description="Uniform Manifold Approximation and Projection")
     umap.add_argument("--components", default=2, type=int, help="the number of components for UMAP")
-    umap.add_argument("--nearest-neighbors", default=200, type=int, help="Nearest neighbors controls how UMAP balances local versus global structure in the data (finer detail patterns versus global structure). This value is proportional to the size of the data (large dataset -> large nearest neighbors. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
+    umap.add_argument("--nearest-neighbors", default=200, type=int, help="Nearest neighbors controls how UMAP balances local versus global structure in the data (finer detail patterns versus global structure). This value is proportional to the size of the data (large dataset -> large nearest neighbors). The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
     umap.add_argument("--min-dist", default=.5, type=float, help="Minimum Distance controls how tightly packed the UMAP embedding is. While it does not change the structure of the data, it does change the embedding's shape. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
 
     mds = subparsers.add_parser("mds", description="Multidimensional Scaling")
@@ -46,7 +46,7 @@ def make_parser_distance():
     parser.add_argument("--alignment", required = True,  help="an aligned FASTA file to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix.")
     parser.add_argument("--indel-distance", action="store_true", help="include insertions/deletions in genetic distance calculations")
     parser.add_argument("--output", required = True, help="a csv file outputting the distance matrix annotated with strain names as the columns")
-   
+
     return parser
 
 def make_parser_cluster():
@@ -70,7 +70,7 @@ def run_embed():
     except Exception as error:
         print(error, file=sys.stderr)
         sys.exit(1)
-   
+
 def run_distance():
     try:
         args = make_parser_distance().parse_args(argv[1:])
