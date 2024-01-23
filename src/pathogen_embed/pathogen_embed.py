@@ -244,7 +244,11 @@ def embed(args):
 
 
         #performing PCA on my pandas dataframe
-        pca = PCA(n_components=n_components, svd_solver='full')
+        pca = PCA(
+            n_components=n_components,
+            svd_solver='full',
+            random_state=args.random_seed,
+        )
         principalComponents = pca.fit_transform(genomes_df)
 
         # Create a data frame from the PCA embedding.
@@ -278,7 +282,8 @@ def embed(args):
             "dissimilarity": "precomputed",
             "n_components": n_components,
             "n_jobs": 1,
-            "n_init": 2
+            "n_init": 2,
+            "random_state" : args.random_seed,
         }
 
     # Override defaults with parameter values passed through embedding parameters, if
