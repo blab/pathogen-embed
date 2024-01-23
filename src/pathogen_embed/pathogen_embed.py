@@ -284,6 +284,7 @@ def embed(args):
             "n_jobs": 1,
             "n_init": 2,
             "random_state" : args.random_seed,
+            "normalized_stress": False,
         }
 
     # Override defaults with parameter values passed through embedding parameters, if
