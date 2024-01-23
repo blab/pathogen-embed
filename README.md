@@ -57,13 +57,23 @@ The main code for the package.
 
 ### To create new version
 
-Run
+Install build dependencies.
 
-``` python3 -m build ```
+``` bash
+python3 -m pip install --upgrade build twine
+```
 
-This creates the dist folder that gets uploaded to pypi.
+Build distribution archives.
 
-``` python3 -m twine upload dist/* ```
+```bash
+python3 -m build
+```
+
+Upload archives to PyPI.
+
+```bash
+python3 -m twine upload dist/*
+```
 
 Input the username and password, upload new dist files to pypi. Make sure the version of the dist folders does not already exist within pypi.
 
