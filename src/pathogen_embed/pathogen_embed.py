@@ -261,7 +261,6 @@ def embed(args):
             "perplexity": args.perplexity,
             "learning_rate": args.learning_rate,
             "random_state" : args.random_seed,
-            "square_distances": True,
         }
     elif args.command == "umap":
         embedding_class = UMAP
