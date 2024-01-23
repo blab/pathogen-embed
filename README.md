@@ -66,3 +66,11 @@ This creates the dist folder that gets uploaded to pypi.
 ``` python3 -m twine upload dist/* ```
 
 Input the username and password, upload new dist files to pypi. Make sure the version of the dist folders does not already exist within pypi.
+
+## Run tests
+
+Run tests with cram.
+
+``` bash
+cram tests
+```

@@ -36,6 +36,11 @@ setup(
                       'matplotlib',
                       'hdbscan'
                       ],
+    extras_require = {
+        'dev': [
+            "cram >=0.7",
+        ]
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
