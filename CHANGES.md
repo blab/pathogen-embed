@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.1.2
+
+### Bug Fixes
+
+* Fix t-SNE keyword argument error associated with recent versions of scikit-learn ([#6][])
+* Pass random seed argument from the command line to PCA and MDS implementations ([#6][])
+
+[#6]: https://github.com/blab/pathogen-embed/pull/2
+
 ## 1.1.1
 
 ### Bug Fixes
