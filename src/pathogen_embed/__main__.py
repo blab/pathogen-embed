@@ -46,7 +46,7 @@ def make_parser_distance():
     parser.add_argument("--alignment", required = True,  help="an aligned FASTA file to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix.")
     parser.add_argument("--indel-distance", action="store_true", help="include insertions/deletions in genetic distance calculations")
     parser.add_argument("--output", required = True, help="a csv file outputting the distance matrix annotated with strain names as the columns")
-   
+
     return parser
 
 def make_parser_cluster():
@@ -70,7 +70,7 @@ def run_embed():
     except Exception as error:
         print(error, file=sys.stderr)
         sys.exit(1)
-   
+
 def run_distance():
     try:
         args = make_parser_distance().parse_args(argv[1:])
