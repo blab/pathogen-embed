@@ -6,6 +6,7 @@ import warnings
 
 warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 
+import matplotlib; matplotlib.set_loglevel("critical")
 import argparse
 import Bio.SeqIO
 from collections import OrderedDict
