@@ -26,7 +26,6 @@ setup(
     install_requires=['numpy',
                       'pandas',
                       "biopython",
-                      'seaborn',
                       'scikit-learn >=1.3,<1.5',
                       'umap-learn ==0.5.*',
                       # Pin Numba at maximum supported version for the pinned umap-learn version.

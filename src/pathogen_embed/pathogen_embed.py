@@ -16,7 +16,6 @@ import numpy as np
 import pandas as pd
 import re
 from scipy.spatial.distance import squareform, pdist
-import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
@@ -337,12 +336,9 @@ def embed(args):
         }
 
         plot_df = pd.DataFrame(plot_data)
-        ax = sns.scatterplot(
-            data=plot_df,
-            x="x",
-            y="y",
-            alpha=0.5,
-        )
+        plt.scatter(plot_df["x"], plot_df["y"], alpha=0.5)
+        plt.xlabel("x")
+        plt.ylabel("y")
         plt.savefig(args.output_figure)
         plt.close()
 
@@ -371,13 +367,15 @@ def cluster(args):
         plot_data["cluster"] = clusterer.labels_.astype(str)
 
         plot_df = pd.DataFrame(plot_data)
-        ax = sns.scatterplot(
-            data=plot_df,
-            x="x",
-            y="y",
-            hue="cluster",
-            alpha=0.5,
-        )
+        clusters = plot_df['cluster'].unique()
+        colors = plt.cm.tab10.colors[:len(clusters)]
+        for i, cluster in enumerate(clusters):
+            cluster_data = plot_df[plot_df['cluster'] == cluster]
+            plt.scatter(cluster_data["x"], cluster_data["y"], color=colors[i], label=f'Cluster {cluster}', alpha=0.5)
+
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
         plt.savefig(args.output_figure)
         plt.close()
 
