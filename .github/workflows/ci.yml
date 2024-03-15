@@ -2,7 +2,7 @@ name: Test pathogen-embed installation and interface
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "default-learning-rate" ]
   pull_request:
     branches: [ "main" ]
 
