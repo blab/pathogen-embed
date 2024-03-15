@@ -3,15 +3,15 @@ import sys
 from sys import argv
 from .pathogen_embed import embed, distance, cluster
 
-class AutoOrFloatAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        if values == "auto":
-            setattr(namespace, self.dest, "auto")
-        else:
-            try:
-                setattr(namespace, self.dest, float(values))
-            except ValueError:
-                raise argparse.ArgumentTypeError(f"Invalid value: {values}. Must be a float or 'auto'.")
+def autoOrFloat(values):
+    if values == "auto":
+        return "auto"
+    else:
+        try:
+            val = float(values)
+            return val
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid value: {values}. Must be a float or 'auto'.")
 
 
 def make_parser_embed():
@@ -38,7 +38,7 @@ def make_parser_embed():
     tsne = subparsers.add_parser("t-sne", description="t-distributed Stochastic Neighborhood Embedding", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     tsne.add_argument("--components", default=2, type=int, help="the number of components for t-SNE")
     tsne.add_argument("--perplexity", default=30.0, type=float, help="The perplexity is related to the number of nearest neighbors. Because of this, the size of the dataset is proportional to the best perplexity value (large dataset -> large perplexity). Values between 5 and 50 work best. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
-    tsne.add_argument("--learning-rate", default="auto", type=AutoOrFloatAction, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
+    tsne.add_argument("--learning-rate", default="auto", type=autoOrFloat, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
 
     umap = subparsers.add_parser("umap", description="Uniform Manifold Approximation and Projection", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     umap.add_argument("--components", default=2, type=int, help="the number of components for UMAP")
