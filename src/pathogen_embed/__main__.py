@@ -25,6 +25,7 @@ def make_parser_embed():
     parser.add_argument("--output-dataframe", help="a csv file outputting the embedding with the strain name and its components.")
     parser.add_argument("--output-figure", help="outputs a PNG plot of the embedding")
     parser.add_argument("--embedding-parameters", help="The file containing the parameters by which to tune the embedding. The values from the first record of this file will override default values or values provided by the command line arguments.")
+    parser.add_argument("--output-pairwise-distance-figure", help="a PNG scatterplot correlating the genetic vs euclidean distances")
 
     subparsers = parser.add_subparsers(
         dest="command",

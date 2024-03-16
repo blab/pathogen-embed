@@ -12,15 +12,19 @@ import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 import numpy as np
 import pandas as pd
 import re
 from scipy.spatial.distance import squareform, pdist
+from scipy.stats import linregress
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
 from umap import UMAP
 
+def distance_tick_formatter(tick_val, tick_pos):
+    return str(int(tick_val))
 
 def find_ranges(positions):
     """
@@ -179,6 +183,55 @@ def get_hamming_distances(genomes, count_indels=False):
             hamming_distances.append(distance)
 
     return hamming_distances
+
+def scatterplot_xyvalues(strains, similarity_matrix, embedding_df, column_list, type_of_embedding):
+    """Returns a unraveled similarity matrix Pandas dataframe of pairwise and euclidean distances for each strain pair
+     Parameters
+    -----------
+    strains: list
+        list of strains for the build (ex. A/Oman/5263/2017)
+    similarity_matrix: Pandas Dataframe
+        a similarity matrix using hamming distance to compare pairwise distance between each strain
+    df_merged: Pandas Dataframe
+        dataframe containing the euclidean coordinates of each strain in an embedding (PCA, MDS, t-SNE, UMAP)
+    column_list: list
+        string list contaning the names of the columns to find the distance between
+    type_of_embedding: string
+        "MDS", "PCA", "TSNE", or "UMAP"
+    Returns
+    ---------
+    A Pandas Dataframe of pairwise and euclidean distances for every strain pair
+    """
+    pairwise_distance_array = np.array(similarity_matrix)[
+        np.triu_indices(len(embedding_df), k=0)]
+
+    indexes_tuple = np.triu_indices(len(embedding_df), k=0)
+    row_number = indexes_tuple[0]
+    column_number = indexes_tuple[1]
+    row_strain = pd.DataFrame([strains[x] for x in row_number])
+    column_strain = pd.DataFrame([strains[x] for x in column_number])
+
+    pairwise_df = pd.DataFrame(pairwise_distance_array)
+    row_column = row_strain.merge(
+        column_strain, how='outer', left_index=True, right_index=True)
+    row_column.columns = ["row", "column"]
+
+    distances = pdist(embedding_df[column_list])
+    euclidean_df = pd.DataFrame({"distance": distances})
+    euclidean_df["embedding"] = type_of_embedding
+    euclidean_df.columns = ["euclidean", "embedding"]
+
+    row_column_pairwise = row_column.merge(
+        pairwise_df, how='outer', left_index=True, right_index=True)
+    row_column_pairwise = row_column_pairwise.where(
+        row_column_pairwise["row"] != row_column_pairwise["column"]).dropna().set_index(euclidean_df.index)
+
+    total_df = row_column_pairwise.merge(
+        euclidean_df, how='inner', left_index=True, right_index=True).dropna()
+    total_df.columns = ["row", "column", "genetic",
+                        "euclidean", "embedding"]
+
+    return total_df
 
 
 def embed(args):
@@ -341,6 +394,41 @@ def embed(args):
         plt.ylabel("y")
         plt.savefig(args.output_figure)
         plt.close()
+
+    if args.output_pairwise_distance_figure:
+        xaxis_locator = MaxNLocator(steps=[1, 4, 5, 10], integer=True)
+
+        if args.command == "mds" or args.command == "pca":
+            columns=[args.command + str(i) for i in range(1, n_components + 1)]
+        else:
+            columns = [args.command.replace('-', '') + "_x" , args.command.replace('-', '') + "_y"]
+
+        total_df = scatterplot_xyvalues(list(embedding_df.index), distance_matrix, embedding_df, columns, args.command)
+
+        regression = linregress(total_df["genetic"], total_df["euclidean"])
+        slope, intercept, r_value, p_value, std_err = regression
+        intercept_sign = "+" if intercept >= 0 else "-"
+
+        ax1 = sns.boxplot(
+            x="genetic",
+            y="euclidean",
+            data=total_df,
+            fliersize=1,
+            linewidth=0.25,
+            color="lightblue",
+        )
+
+        ax1.set_xlabel("Genetic distance")
+        ax1.set_ylabel("Euclidean distance")
+
+        ax1.xaxis.set_major_formatter(distance_tick_formatter)
+        ax1.xaxis.set_major_locator(xaxis_locator)
+
+        ax1.yaxis.set_major_formatter(distance_tick_formatter)
+        ax1.yaxis.set_major_locator(MaxNLocator(steps=[1, 4, 5, 10], integer=True))
+
+        ax1.set_title(f"{args.command} ($R^2={r_value:.2f}, y = {slope:.2f}x {intercept_sign} {np.abs(intercept):.2f}$)")
+        plt.savefig(args.output_pairwise_distance_figure)
 
 def cluster(args):
 
