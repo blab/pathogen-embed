@@ -3,6 +3,17 @@ import sys
 from sys import argv
 from .pathogen_embed import embed, distance, cluster
 
+def autoOrFloat(values):
+    if values == "auto":
+        return "auto"
+    else:
+        try:
+            val = float(values)
+            return val
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid value: {values}. Must be a float or 'auto'.")
+
+
 def make_parser_embed():
     parser = argparse.ArgumentParser(description = "Reduced dimension embeddings for pathogen sequences", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
@@ -20,21 +31,21 @@ def make_parser_embed():
         required=True
     )
 
-    pca = subparsers.add_parser("pca", description="Principal Component Analysis")
+    pca = subparsers.add_parser("pca", description="Principal Component Analysis", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     pca.add_argument("--components", default=10, type=int, help="the number of components for PCA")
     pca.add_argument("--explained-variance", help="the path for the CSV explained variance for each component")
 
-    tsne = subparsers.add_parser("t-sne", description="t-distributed Stochastic Neighborhood Embedding")
+    tsne = subparsers.add_parser("t-sne", description="t-distributed Stochastic Neighborhood Embedding", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     tsne.add_argument("--components", default=2, type=int, help="the number of components for t-SNE")
     tsne.add_argument("--perplexity", default=30.0, type=float, help="The perplexity is related to the number of nearest neighbors. Because of this, the size of the dataset is proportional to the best perplexity value (large dataset -> large perplexity). Values between 5 and 50 work best. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
-    tsne.add_argument("--learning-rate", default=200.0, type=float, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
+    tsne.add_argument("--learning-rate", default="auto", type=autoOrFloat, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
 
-    umap = subparsers.add_parser("umap", description="Uniform Manifold Approximation and Projection")
+    umap = subparsers.add_parser("umap", description="Uniform Manifold Approximation and Projection", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     umap.add_argument("--components", default=2, type=int, help="the number of components for UMAP")
     umap.add_argument("--nearest-neighbors", default=200, type=int, help="Nearest neighbors controls how UMAP balances local versus global structure in the data (finer detail patterns versus global structure). This value is proportional to the size of the data (large dataset -> large nearest neighbors). The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
     umap.add_argument("--min-dist", default=.5, type=float, help="Minimum Distance controls how tightly packed the UMAP embedding is. While it does not change the structure of the data, it does change the embedding's shape. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
 
-    mds = subparsers.add_parser("mds", description="Multidimensional Scaling")
+    mds = subparsers.add_parser("mds", description="Multidimensional Scaling", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     mds.add_argument("--components", default=10, type=int, help="the number of components for MDS")
     mds.add_argument("--stress", help="the path for the CSV stress for the embedding")
 
