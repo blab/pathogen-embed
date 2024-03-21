@@ -410,8 +410,8 @@ def embed(args):
         ax.yaxis.set_major_formatter(distance_tick_formatter)
         ax.yaxis.set_major_locator(MultipleLocator(5))
 
-        ax.set_xlim(genetic_distances.min(), genetic_distances.max())
-        ax.set_ylim(bottom=0)
+        ax.set_xlim(left=-1)
+        ax.set_ylim(bottom=-1)
 
         ax.set_title(f"{args.command} (Pearson's $R^2={r_value:.2f}, y = {slope:.2f}x {intercept_sign} {np.abs(intercept):.2f}$)")
         plt.tight_layout()
