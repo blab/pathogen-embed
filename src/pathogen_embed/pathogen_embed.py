@@ -12,15 +12,19 @@ import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 import re
 from scipy.spatial.distance import squareform, pdist
+from scipy.stats import linregress
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
 from umap import UMAP
 
+def distance_tick_formatter(tick_val, tick_pos):
+    return str(int(tick_val))
 
 def find_ranges(positions):
     """
@@ -341,6 +345,77 @@ def embed(args):
         plt.ylabel("y")
         plt.savefig(args.output_figure)
         plt.close()
+
+    if args.output_pairwise_distance_figure:
+        # Calculate pairwise Euclidean distances in the embedding.
+        euclidean_distances = pdist(embedding_df.values)
+
+        # Transform the genetic distance matrix to the condensed matrix format
+        # such that each entry in the output corresponds to the entry at the
+        # same position in the Euclidean distances.
+        genetic_distances = squareform(distance_matrix)
+
+        regression = linregress(genetic_distances, euclidean_distances)
+        slope, intercept, r_value, p_value, std_err = regression
+        intercept_sign = "+" if intercept >= 0 else "-"
+
+        # Group Euclidean distances across the range of observed genetic
+        # distances, so we can make a separate boxplot of Euclidean distances
+        # per genetic distance value.
+        genetic_distance_range = range(genetic_distances.min(), genetic_distances.max() + 1)
+        grouped_euclidean_distances = []
+        for genetic_distance in genetic_distance_range:
+            grouped_euclidean_distances.append(
+                euclidean_distances[genetic_distances == genetic_distance]
+            )
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=300)
+        boxplot = ax.boxplot(
+            grouped_euclidean_distances,
+            labels=list(genetic_distance_range),
+            positions=list(genetic_distance_range),
+            boxprops={
+                "linewidth": 0.25,
+            },
+            medianprops={
+                "color": "#999999",
+            },
+            whiskerprops={
+                "linewidth": 0.25,
+            },
+            flierprops={
+                "markersize": 1,
+            },
+            patch_artist=True,
+        )
+
+        # Set colors for boxes.
+        for patch in boxplot["boxes"]:
+            patch.set_facecolor("lightblue")
+
+        # Plot linear fit behind the boxplots.
+        ax.plot(
+            genetic_distance_range,
+            [slope * distance + intercept for distance in genetic_distance_range],
+            color="#999999",
+            zorder=-10,
+        )
+
+        ax.set_xlabel("Genetic distance")
+        ax.set_ylabel("Euclidean distance")
+
+        ax.xaxis.set_major_formatter(distance_tick_formatter)
+        ax.xaxis.set_major_locator(MultipleLocator(5))
+
+        ax.yaxis.set_major_formatter(distance_tick_formatter)
+        ax.yaxis.set_major_locator(MultipleLocator(5))
+
+        ax.set_xlim(left=-1)
+        ax.set_ylim(bottom=-1)
+
+        ax.set_title(f"{args.command} (Pearson's $R^2={r_value:.2f}, y = {slope:.2f}x {intercept_sign} {np.abs(intercept):.2f}$)")
+        plt.tight_layout()
+        plt.savefig(args.output_pairwise_distance_figure)
 
 def cluster(args):
 
