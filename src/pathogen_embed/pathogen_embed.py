@@ -368,10 +368,9 @@ def cluster(args):
 
         plot_df = pd.DataFrame(plot_data)
         clusters = plot_df['cluster'].unique()
-        colors = plt.cm.tab10.colors[:len(clusters)]
         for i, cluster in enumerate(clusters):
             cluster_data = plot_df[plot_df['cluster'] == cluster]
-            plt.scatter(cluster_data["x"], cluster_data["y"], color=colors[i], label=f'Cluster {cluster}', alpha=0.5)
+            plt.scatter(cluster_data["x"], cluster_data["y"], label=f'Cluster {cluster}', alpha=0.5)
 
         plt.xlabel("x")
         plt.ylabel("y")
