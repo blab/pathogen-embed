@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## 2.0.0
+
+### Major Changes
+
+* Removed seaborn as a dependency in favor of base matplotlib ([#13][])
+* Set default learning rate for t-SNE to "auto" such that the learning rate scales with the sample size ([#12][])
+
+### Features
+
+* Add optional output from pathogen-embed that produces the boxplot figure of Euclidean by genetic distance ([#14][])
+
+### Bug Fixes
+
+* Display default parameters for subcommands of pathogen-embed ([#12][])
+
+[#12]: https://github.com/blab/pathogen-embed/pull/12
+[#13]: https://github.com/blab/pathogen-embed/pull/13
+[#14]: https://github.com/blab/pathogen-embed/pull/14
+
 ## 1.1.2
 
 ### Bug Fixes
