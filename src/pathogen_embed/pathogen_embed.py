@@ -18,6 +18,7 @@ import pandas as pd
 import re
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import linregress
+import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
