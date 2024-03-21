@@ -12,13 +12,12 @@ import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
 import re
 from scipy.spatial.distance import squareform, pdist
 from scipy.stats import linregress
-import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE, MDS
 import sys
@@ -185,55 +184,6 @@ def get_hamming_distances(genomes, count_indels=False):
 
     return hamming_distances
 
-def scatterplot_xyvalues(strains, similarity_matrix, embedding_df, column_list, type_of_embedding):
-    """Returns a unraveled similarity matrix Pandas dataframe of pairwise and euclidean distances for each strain pair
-     Parameters
-    -----------
-    strains: list
-        list of strains for the build (ex. A/Oman/5263/2017)
-    similarity_matrix: Pandas Dataframe
-        a similarity matrix using hamming distance to compare pairwise distance between each strain
-    df_merged: Pandas Dataframe
-        dataframe containing the euclidean coordinates of each strain in an embedding (PCA, MDS, t-SNE, UMAP)
-    column_list: list
-        string list contaning the names of the columns to find the distance between
-    type_of_embedding: string
-        "MDS", "PCA", "TSNE", or "UMAP"
-    Returns
-    ---------
-    A Pandas Dataframe of pairwise and euclidean distances for every strain pair
-    """
-    pairwise_distance_array = np.array(similarity_matrix)[
-        np.triu_indices(len(embedding_df), k=0)]
-
-    indexes_tuple = np.triu_indices(len(embedding_df), k=0)
-    row_number = indexes_tuple[0]
-    column_number = indexes_tuple[1]
-    row_strain = pd.DataFrame([strains[x] for x in row_number])
-    column_strain = pd.DataFrame([strains[x] for x in column_number])
-
-    pairwise_df = pd.DataFrame(pairwise_distance_array)
-    row_column = row_strain.merge(
-        column_strain, how='outer', left_index=True, right_index=True)
-    row_column.columns = ["row", "column"]
-
-    distances = pdist(embedding_df[column_list])
-    euclidean_df = pd.DataFrame({"distance": distances})
-    euclidean_df["embedding"] = type_of_embedding
-    euclidean_df.columns = ["euclidean", "embedding"]
-
-    row_column_pairwise = row_column.merge(
-        pairwise_df, how='outer', left_index=True, right_index=True)
-    row_column_pairwise = row_column_pairwise.where(
-        row_column_pairwise["row"] != row_column_pairwise["column"]).dropna().set_index(euclidean_df.index)
-
-    total_df = row_column_pairwise.merge(
-        euclidean_df, how='inner', left_index=True, right_index=True).dropna()
-    total_df.columns = ["row", "column", "genetic",
-                        "euclidean", "embedding"]
-
-    return total_df
-
 
 def embed(args):
     # Setting Random seed for numpy
@@ -397,38 +347,74 @@ def embed(args):
         plt.close()
 
     if args.output_pairwise_distance_figure:
-        xaxis_locator = MaxNLocator(steps=[1, 4, 5, 10], integer=True)
+        # Calculate pairwise Euclidean distances in the embedding.
+        euclidean_distances = pdist(embedding_df.values)
 
-        if args.command == "mds" or args.command == "pca":
-            columns=[args.command + str(i) for i in range(1, n_components + 1)]
-        else:
-            columns = [args.command.replace('-', '') + "_x" , args.command.replace('-', '') + "_y"]
+        # Transform the genetic distance matrix to the condensed matrix format
+        # such that each entry in the output corresponds to the entry at the
+        # same position in the Euclidean distances.
+        genetic_distances = squareform(distance_matrix)
 
-        total_df = scatterplot_xyvalues(list(embedding_df.index), distance_matrix, embedding_df, columns, args.command)
-
-        regression = linregress(total_df["genetic"], total_df["euclidean"])
+        regression = linregress(genetic_distances, euclidean_distances)
         slope, intercept, r_value, p_value, std_err = regression
         intercept_sign = "+" if intercept >= 0 else "-"
 
-        ax1 = sns.boxplot(
-            x="genetic",
-            y="euclidean",
-            data=total_df,
-            fliersize=1,
-            linewidth=0.25,
-            color="lightblue",
+        # Group Euclidean distances across the range of observed genetic
+        # distances, so we can make a separate boxplot of Euclidean distances
+        # per genetic distance value.
+        genetic_distance_range = range(genetic_distances.min(), genetic_distances.max() + 1)
+        grouped_euclidean_distances = []
+        for genetic_distance in genetic_distance_range:
+            grouped_euclidean_distances.append(
+                euclidean_distances[genetic_distances == genetic_distance]
+            )
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=300)
+        boxplot = ax.boxplot(
+            grouped_euclidean_distances,
+            labels=list(genetic_distance_range),
+            positions=list(genetic_distance_range),
+            boxprops={
+                "linewidth": 0.25,
+            },
+            medianprops={
+                "color": "#999999",
+            },
+            whiskerprops={
+                "linewidth": 0.25,
+            },
+            flierprops={
+                "markersize": 1,
+            },
+            patch_artist=True,
         )
 
-        ax1.set_xlabel("Genetic distance")
-        ax1.set_ylabel("Euclidean distance")
+        # Set colors for boxes.
+        for patch in boxplot["boxes"]:
+            patch.set_facecolor("lightblue")
 
-        ax1.xaxis.set_major_formatter(distance_tick_formatter)
-        ax1.xaxis.set_major_locator(xaxis_locator)
+        # Plot linear fit behind the boxplots.
+        ax.plot(
+            genetic_distance_range,
+            [slope * distance + intercept for distance in genetic_distance_range],
+            color="#999999",
+            zorder=-10,
+        )
 
-        ax1.yaxis.set_major_formatter(distance_tick_formatter)
-        ax1.yaxis.set_major_locator(MaxNLocator(steps=[1, 4, 5, 10], integer=True))
+        ax.set_xlabel("Genetic distance")
+        ax.set_ylabel("Euclidean distance")
 
-        ax1.set_title(f"{args.command} ($R^2={r_value:.2f}, y = {slope:.2f}x {intercept_sign} {np.abs(intercept):.2f}$)")
+        ax.xaxis.set_major_formatter(distance_tick_formatter)
+        ax.xaxis.set_major_locator(MultipleLocator(5))
+
+        ax.yaxis.set_major_formatter(distance_tick_formatter)
+        ax.yaxis.set_major_locator(MultipleLocator(5))
+
+        ax.set_xlim(genetic_distances.min(), genetic_distances.max())
+        ax.set_ylim(bottom=0)
+
+        ax.set_title(f"{args.command} (Pearson's $R^2={r_value:.2f}, y = {slope:.2f}x {intercept_sign} {np.abs(intercept):.2f}$)")
+        plt.tight_layout()
         plt.savefig(args.output_pairwise_distance_figure)
 
 def cluster(args):
