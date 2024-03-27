@@ -76,25 +76,13 @@ def make_parser_cluster():
     return parser
 
 def run_embed():
-    try:
-        args = make_parser_embed().parse_args(argv[1:])
-        return embed(args)
-    except Exception as error:
-        print(error, file=sys.stderr)
-        sys.exit(1)
+    args = make_parser_embed().parse_args(argv[1:])
+    return embed(args)
 
 def run_distance():
-    try:
-        args = make_parser_distance().parse_args(argv[1:])
-        return distance(args)
-    except Exception as error:
-        print(error, file=sys.stderr)
-        sys.exit(1)
+    args = make_parser_distance().parse_args(argv[1:])
+    return distance(args)
 
 def run_cluster():
-    try:
-        args = make_parser_cluster().parse_args(argv[1:])
-        return cluster(args)
-    except Exception as error:
-        print(error, file=sys.stderr)
-        sys.exit(1)
+    args = make_parser_cluster().parse_args(argv[1:])
+    return cluster(args)
