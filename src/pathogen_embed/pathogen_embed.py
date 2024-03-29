@@ -344,6 +344,7 @@ def embed(args):
         ax.scatter(plot_df["x"], plot_df["y"], alpha=0.5)
         ax.set_xlabel("x")
         ax.set_ylabel("y")
+        plt.tight_layout()
         plt.savefig(args.output_figure)
         plt.close()
 
