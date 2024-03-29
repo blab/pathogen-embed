@@ -340,9 +340,10 @@ def embed(args):
         }
 
         plot_df = pd.DataFrame(plot_data)
-        plt.scatter(plot_df["x"], plot_df["y"], alpha=0.5)
-        plt.xlabel("x")
-        plt.ylabel("y")
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6), dpi=300)
+        ax.scatter(plot_df["x"], plot_df["y"], alpha=0.5)
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
         plt.savefig(args.output_figure)
         plt.close()
 
@@ -443,13 +444,22 @@ def cluster(args):
 
         plot_df = pd.DataFrame(plot_data)
         clusters = plot_df['cluster'].unique()
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 6), dpi=300)
+
         for i, cluster in enumerate(clusters):
             cluster_data = plot_df[plot_df['cluster'] == cluster]
-            plt.scatter(cluster_data["x"], cluster_data["y"], label=f'Cluster {cluster}', alpha=0.5)
+            ax.scatter(cluster_data["x"], cluster_data["y"], label=f'Cluster {cluster}', alpha=0.5)
 
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.legend()
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.legend(
+            frameon=False,
+            bbox_to_anchor=(1.05, 1),
+            loc='upper left',
+            borderaxespad=0.
+        )
+        plt.tight_layout()
         plt.savefig(args.output_figure)
         plt.close()
 
