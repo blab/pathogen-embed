@@ -17,8 +17,8 @@ def autoOrFloat(values):
 def make_parser_embed():
     parser = argparse.ArgumentParser(description = "Reduced dimension embeddings for pathogen sequences", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--alignment", required = True, help="an aligned FASTA file to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix.")
-    parser.add_argument("--distance-matrix", help="a distance matrix that can be read in by pandas, index column as row 0")
+    parser.add_argument("--alignment", nargs="+", required = True, help="an aligned FASTA file (or files) to create a distance matrix with. Make sure the strain order in this file matches the order in the distance matrix. If adding more than one alignment, make sure the order of the strains and strain names are the same between all the files.")
+    parser.add_argument("--distance-matrix", nargs="+", help="a distance matrix (or matrices) that can be read in by pandas, index column as row 0.  If adding more than one distance matrix, make sure the order of the strains and strain names in the header are the same between all the files.")
     parser.add_argument("--separator", default=",", help="separator between columns in the given distance matrix")
     parser.add_argument("--indel-distance", action="store_true", help="include insertions/deletions in genetic distance calculations")
     parser.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")

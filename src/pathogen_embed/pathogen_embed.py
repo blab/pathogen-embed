@@ -184,6 +184,22 @@ def get_hamming_distances(genomes, count_indels=False):
 
     return hamming_distances
 
+def concat_distance_matrices(matrices):
+    # TODO: add error checking?
+    result = matrices[0]
+
+    result_df = pd.read_csv(result, header=None)
+
+    result_arr = result_df.values.astype(float)
+
+    # Add the numpy arrays element-wise
+    for matrix in matrices[1:]:
+        other_df = pd.read_csv(matrix, header=None)
+        other_arr = other_df.values.astype(float)
+
+        result_arr = result_arr + other_arr
+
+    return result_arr
 
 def embed(args):
     # Setting Random seed for numpy
@@ -196,30 +212,50 @@ def embed(args):
     if args.alignment is None and args.command == "pca":
         print("You must specify an alignment for pca, not a distance matrix", file=sys.stderr)
         sys.exit(1)
+
+    if args.distance_matrix is not None and not all((distance_matrix.endswith(".csv") for distance_matrix in args.distance_matrix)):
+            print("ERROR: The distance matrix input(s) must be in comma-separate value (CSV) format.", file=sys.stderr)
+            sys.exit(1)
+
+    if args.alignment is not None and args.distance_matrix is not None and len(args.alignment) != len(args.distance_matrix):
+        print("If giving multiple alignments and distance matrices the number of both must match", file=sys.stderr)
+        sys.exit(1)
+
     # getting or creating the distance matrix
     distance_matrix = None
-    if args.distance_matrix is not None:
-        if not args.distance_matrix.endswith('.csv'):
-            print("You must supply a CSV file for distance_matrix.", file=sys.stderr)
-            sys.exit(1)
-        else: 
-            distance_matrix  = pd.read_csv(args.distance_matrix, index_col=0)
+    if args.distance_matrix is not None and args.command != "pca":
+        distance_matrix = concat_distance_matrices(args.distance_matrix)
 
-    if args.alignment is not None:
-        sequences_by_name = OrderedDict()
+    # if alignments and no distance matrices
+    sequence_names = None
+    if args.alignment is not None and distance_matrix is None:
 
-        for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
-            sequences_by_name[sequence.id] = str(sequence.seq)
+        for alignment in args.alignment:
+            curr_matrix = None
+            # TODO: check the concatenation logic
+            if (distance_matrix is not None):
+                curr_matrix = distance_matrix
 
-        sequence_names = list(sequences_by_name.keys())
-        if args.command != "pca" and distance_matrix is None:
-            # Calculate Distance Matrix
-            hamming_distances = get_hamming_distances(
-                list(sequences_by_name.values()),
-                args.indel_distance,
-            )
-            distance_matrix = pd.DataFrame(squareform(hamming_distances))
-            distance_matrix.index = sequence_names
+            sequences_by_name = OrderedDict()
+
+            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
+                sequences_by_name[sequence.id] = str(sequence.seq)
+
+            if (sequence_names is not None):
+                if (sequence_names != list(sequences_by_name.keys)):
+                    print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
+                    sys.exit(1)
+
+            sequence_names = list(sequences_by_name.keys())
+            if args.command != "pca" and distance_matrix is None:
+                # Calculate Distance Matrix
+                hamming_distances = get_hamming_distances(
+                    list(sequences_by_name.values()),
+                    args.indel_distance,
+                )
+                distance_matrix = pd.DataFrame(squareform(hamming_distances))
+                distance_matrix.index = sequence_names
+                distance_matrix = curr_matrix + distance_matrix
 
     # Load embedding parameters from an external CSV file, if possible.
     external_embedding_parameters = None
@@ -227,7 +263,7 @@ def embed(args):
         if not args.embedding_parameters.endswith('.csv'):
             print("You must supply a CSV file for embedding parameters.", file=sys.stderr)
             sys.exit(1)
-        else: 
+        else:
             external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
         # Get a dictionary of additional parameters provided by the external
@@ -242,17 +278,35 @@ def embed(args):
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
-        sequence_names = list(sequences_by_name.keys())
+        genomes_df = None
+        sequence_names = None
+        for alignment in args.alignment:
 
-        numbers = list(sequences_by_name.values())[:]
-        for i in range(0,len(list(sequences_by_name.values()))):
-            numbers[i] = re.sub(r'[^AGCT]', '5', numbers[i])
-            numbers[i] = list(numbers[i].replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
-            numbers[i] = [int(j) for j in numbers[i]]
+            sequences_by_name = OrderedDict()
 
-        genomes_df = pd.DataFrame(numbers)
-        genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
+            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
+                sequences_by_name[sequence.id] = str(sequence.seq)
 
+            if (sequence_names is not None):
+                if (sequence_names != list(sequences_by_name.keys)):
+                    print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
+                    sys.exit(1)
+
+            sequence_names = list(sequences_by_name.keys())
+
+            numbers = list(sequences_by_name.values())[:]
+            for i in range(0,len(list(sequences_by_name.values()))):
+                numbers[i] = re.sub(r'[^AGCT]', '5', numbers[i])
+                numbers[i] = list(numbers[i].replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
+                numbers[i] = [int(j) for j in numbers[i]]
+
+            if genomes_df is None:
+                genomes_df = pd.DataFrame(numbers)
+                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
+            else:
+                second_df = pd.DataFrame(numbers)
+                second_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
+                genomes_df = genomes_df.add(second_df)
 
         #performing PCA on my pandas dataframe
         pca = PCA(
@@ -431,7 +485,7 @@ def cluster(args):
     if not args.embedding.endswith('.csv'):
         print("You must supply a CSV file for the embedding.", file=sys.stderr)
         sys.exit(1)
-    else: 
+    else:
         embedding_df = pd.read_csv(args.embedding, index_col=0)
 
     clustering_parameters = {
