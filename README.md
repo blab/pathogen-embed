@@ -49,11 +49,11 @@ pathogen-embed \
     --perplexity 50.0
 ```
 
-The resulting embedding looks something like this.
+The following figure shows the resulting embedding.
 
 ![Example t-SNE embedding of seasonal influenza A/H3N2 hemagglutinin sequences](images/example-tsne-embedding.png)
 
-The pairwise genetic and Euclidean distances plot looks like this.
+The following figure shows the distribution of pairwise Euclidean distances by corresponding pairwise genetic distance.
 The equation in the figure title shows how genetic distances (*x* in the equation) scale to Euclidean distances (*y*) in the embedding.
 
 ![Distribution of Euclidean distances between pairs of genomes in a t-SNE embedding by the pairwise genetic distance between the same genomes](images/example-tsne-pairwise-distances.png)
@@ -73,6 +73,8 @@ Note that the underlying clustering algorithm, [HDBSCAN](https://hdbscan.readthe
 These unassigned samples receive a cluster label of "-1".
 
 ![Example t-SNE embedding of seasonal influenza A/H3N2 hemagglutinin sequences colored by the cluster label assigned by pathogen-cluster](images/example-tsne-embedding-with-clusters.png)
+
+If you know the minimum genetic distance you want to require between clusters, you can use the equation from the pairwise distance figure above to determine the corresponding minimum Euclidean distance to pass to `pathogen-cluster`'s `--distance-threshold` argument.
 
 ## Build documentation
 
