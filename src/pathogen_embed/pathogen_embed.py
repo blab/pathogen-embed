@@ -201,6 +201,7 @@ def embed(args):
     if args.distance_matrix is not None:
         if not args.distance_matrix.endswith('.csv'):
             print("You must supply a CSV file for distance_matrix.", file=sys.stderr)
+            sys.exit(1)
         else: 
             distance_matrix  = pd.read_csv(args.distance_matrix, index_col=0)
 
@@ -225,6 +226,7 @@ def embed(args):
     if args.embedding_parameters is not None:
         if not args.embedding_parameters.endswith('.csv'):
             print("You must supply a CSV file for embedding parameters.", file=sys.stderr)
+            sys.exit(1)
         else: 
             external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
@@ -426,6 +428,7 @@ def cluster(args):
 
     if not args.embedding.endswith('.csv'):
         print("You must supply a CSV file for the embedding.", file=sys.stderr)
+        sys.exit(1)
     else: 
         embedding_df = pd.read_csv(args.embedding, index_col=0)
 
