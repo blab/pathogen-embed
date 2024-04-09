@@ -15,3 +15,4 @@ There should be 1 entry for the stress of the MDS embedding.
 
   $ wc -l < embed_mds_stress.csv
   \s*1 (re)
+

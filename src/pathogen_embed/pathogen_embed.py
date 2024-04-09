@@ -94,7 +94,7 @@ def get_hamming_distances(genomes, count_indels=False):
     >>> genomes = ["ACTGG", "A--GN", "A-NGG"]
     >>> get_hamming_distances(genomes, True)
     [1, 1, 1]
-
+f
     When counting indels, we ignore leading and trailing gaps that indicate
     different sequence lengths and not biological events.
 
@@ -188,18 +188,18 @@ def concat_distance_matrices(matrices):
     # TODO: add error checking?
     result = matrices[0]
 
-    result_df = pd.read_csv(result, header=None)
+    result_df = pd.read_csv(result, index_col=0)
 
     result_arr = result_df.values.astype(float)
 
     # Add the numpy arrays element-wise
     for matrix in matrices[1:]:
-        other_df = pd.read_csv(matrix, header=None)
+        other_df = pd.read_csv(matrix, index_col=0)
         other_arr = other_df.values.astype(float)
 
         result_arr = result_arr + other_arr
 
-    return result_arr
+    return pd.DataFrame(result_arr)
 
 def embed(args):
     # Setting Random seed for numpy
@@ -218,44 +218,77 @@ def embed(args):
             sys.exit(1)
 
     if args.alignment is not None and args.distance_matrix is not None and len(args.alignment) != len(args.distance_matrix):
+        print(len(args.alignment))
+        print(len(args.distance_matrix))
         print("If giving multiple alignments and distance matrices the number of both must match", file=sys.stderr)
         sys.exit(1)
 
+    set_index = False
     # getting or creating the distance matrix
     distance_matrix = None
     if args.distance_matrix is not None and args.command != "pca":
         distance_matrix = concat_distance_matrices(args.distance_matrix)
+        set_index = True
 
     # if alignments and no distance matrices
     sequence_names = None
+    # if args.alignment is not None and distance_matrix is None:
+
+    #     for alignment in args.alignment:
+    #         curr_matrix = None
+    #         if (distance_matrix is not None):
+    #             curr_matrix = distance_matrix
+
+    #         sequences_by_name = OrderedDict()
+
+    #         for sequence in Bio.SeqIO.parse(alignment, "fasta"):
+    #             sequences_by_name[sequence.id] = str(sequence.seq)
+
+    #         if (sequence_names is not None):
+    #             if (sequence_names != list(sequences_by_name.keys)):
+    #                 print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
+    #                 sys.exit(1)
+
+    #         sequence_names = list(sequences_by_name.keys())
+    #         if args.command != "pca" and distance_matrix is None:
+    #             # Calculate Distance Matrix
+    #             hamming_distances = get_hamming_distances(
+    #                 list(sequences_by_name.values()),
+    #                 args.indel_distance,
+    #             )
+    #             distance_matrix = pd.DataFrame(squareform(hamming_distances))
+    #             distance_matrix.index = sequence_names
+    #             distance_matrix = curr_matrix + distance_matrix
+
+
     if args.alignment is not None and distance_matrix is None:
-
         for alignment in args.alignment:
-            curr_matrix = None
-            # TODO: check the concatenation logic
-            if (distance_matrix is not None):
-                curr_matrix = distance_matrix
-
             sequences_by_name = OrderedDict()
 
             for sequence in Bio.SeqIO.parse(alignment, "fasta"):
                 sequences_by_name[sequence.id] = str(sequence.seq)
 
-            if (sequence_names is not None):
-                if (sequence_names != list(sequences_by_name.keys)):
-                    print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
-                    sys.exit(1)
+            seq_sorted = sorted(list(sequences_by_name.keys()))
+            if sequence_names is not None and sorted(sequence_names) != seq_sorted:
+                print("The strains in the multiple alignments must match before concatenating them", file=sys.stderr)
+                sys.exit(1)
 
-            sequence_names = list(sequences_by_name.keys())
-            if args.command != "pca" and distance_matrix is None:
-                # Calculate Distance Matrix
-                hamming_distances = get_hamming_distances(
-                    list(sequences_by_name.values()),
-                    args.indel_distance,
-                )
-                distance_matrix = pd.DataFrame(squareform(hamming_distances))
-                distance_matrix.index = sequence_names
-                distance_matrix = curr_matrix + distance_matrix
+            sequence_names = seq_sorted #list(sequences_by_name.keys())
+
+            # assert sequence_names == list(sequences_by_name.keys())
+
+            # Calculate Distance Matrix
+            hamming_distances = get_hamming_distances(list(sequences_by_name.values()), args.indel_distance)
+            new_distance_matrix = pd.DataFrame(squareform(hamming_distances))
+            new_distance_matrix.index = sequence_names
+
+            if distance_matrix is None:
+                distance_matrix = new_distance_matrix
+            else:
+                distance_matrix += new_distance_matrix
+
+        if (set_index):
+            distance_matrix.index = sequence_names
 
     # Load embedding parameters from an external CSV file, if possible.
     external_embedding_parameters = None
@@ -287,12 +320,13 @@ def embed(args):
             for sequence in Bio.SeqIO.parse(alignment, "fasta"):
                 sequences_by_name[sequence.id] = str(sequence.seq)
 
+            seq_sorted = sorted(list(sequences_by_name.keys()))
             if (sequence_names is not None):
-                if (sequence_names != list(sequences_by_name.keys)):
+                if (sequence_names != seq_sorted):
                     print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
                     sys.exit(1)
 
-            sequence_names = list(sequences_by_name.keys())
+            sequence_names = seq_sorted
 
             numbers = list(sequences_by_name.values())[:]
             for i in range(0,len(list(sequences_by_name.values()))):
@@ -305,9 +339,8 @@ def embed(args):
                 genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
             else:
                 second_df = pd.DataFrame(numbers)
-                second_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
-                genomes_df = genomes_df.add(second_df)
-
+                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[i]))]
+                genomes_df = pd.concat([genomes_df, second_df], axis=1)
         #performing PCA on my pandas dataframe
         pca = PCA(
             n_components=n_components,
@@ -365,6 +398,7 @@ def embed(args):
                 embedding_parameters[key] = value_type(value)
 
     if args.command != "pca":
+        #TODO: distance matrices are no longer symmetrics/not square? Check into this
         embedder = embedding_class(**embedding_parameters)
         embedding = embedder.fit_transform(distance_matrix)
 
