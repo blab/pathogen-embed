@@ -5,6 +5,5 @@ Run pathogen-embed with a tsv instead of a csv to see if it throws an error.
   >   --output-dataframe embed_t-sne.tsv \
   >   t-sne \
   >   --perplexity 25
-
-== stderr
 You must supply a CSV file for distance_matrix.
+[1]

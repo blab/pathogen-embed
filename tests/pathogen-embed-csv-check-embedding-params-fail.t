@@ -7,6 +7,5 @@ Run pathogen embed and check that embedding parameters with not csv input fails
   >   --embedding-parameters value.tsv \
   >   t-sne \
   >   --perplexity 25
-
-== stderr
-You must supply a CSV file for embedding parameters.
+  You must supply a CSV file for embedding parameters.
+  [1]

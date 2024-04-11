@@ -5,6 +5,5 @@ Run pathogen cluster and check that error message is thrown when non csv input i
   >   --label-attribute pca_label \
   >   --distance-threshold 0.5 \
   >   --output-dataframe cluster_embed_pca.csv
-
-== stderr
-You must supply a CSV file for the embedding.
+  You must supply a CSV file for the embedding.
+  [1]
