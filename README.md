@@ -32,7 +32,7 @@ pathogen-distance \
 > This command converts the default tab-delimited output of snp-dists into the comma-delimited format expected by pathogen-embed.
 >
 > ```bash
-> snp-dists -b tests/data/h3n2_ha_alignment.fasta | sed 's/\t/,/g' > distances.csv
+> snp-dists -c -b tests/data/h3n2_ha_alignment.fasta > distances.csv
 > ```
 
 Create a t-SNE embedding from the distance matrix.
