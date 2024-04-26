@@ -196,11 +196,14 @@ def embed(args):
     if args.alignment is None and args.command == "pca":
         print("You must specify an alignment for pca, not a distance matrix", file=sys.stderr)
         sys.exit(1)
-
     # getting or creating the distance matrix
     distance_matrix = None
     if args.distance_matrix is not None:
-        distance_matrix  = pd.read_csv(args.distance_matrix, index_col=0)
+        if not args.distance_matrix.endswith('.csv'):
+            print("You must supply a CSV file for distance_matrix.", file=sys.stderr)
+            sys.exit(1)
+        else: 
+            distance_matrix  = pd.read_csv(args.distance_matrix, index_col=0)
 
     if args.alignment is not None:
         sequences_by_name = OrderedDict()
@@ -221,7 +224,11 @@ def embed(args):
     # Load embedding parameters from an external CSV file, if possible.
     external_embedding_parameters = None
     if args.embedding_parameters is not None:
-        external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
+        if not args.embedding_parameters.endswith('.csv'):
+            print("You must supply a CSV file for embedding parameters.", file=sys.stderr)
+            sys.exit(1)
+        else: 
+            external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
         # Get a dictionary of additional parameters provided by the external
         # file to override defaults for the current method.
@@ -421,7 +428,11 @@ def embed(args):
 
 def cluster(args):
 
-    embedding_df = pd.read_csv(args.embedding, index_col=0)
+    if not args.embedding.endswith('.csv'):
+        print("You must supply a CSV file for the embedding.", file=sys.stderr)
+        sys.exit(1)
+    else: 
+        embedding_df = pd.read_csv(args.embedding, index_col=0)
 
     clustering_parameters = {
         **({"min_cluster_size": args.min_size} if args.min_size is not None else {}),
