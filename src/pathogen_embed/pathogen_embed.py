@@ -230,38 +230,10 @@ def embed(args):
         distance_matrix = concat_distance_matrices(args.distance_matrix)
         set_index = True
 
-    # if alignments and no distance matrices
+    # If we have alignments but no distance matrices and we need distances for
+    # the method, calculate distances on the fly.
     sequence_names = None
-    # if args.alignment is not None and distance_matrix is None:
-
-    #     for alignment in args.alignment:
-    #         curr_matrix = None
-    #         if (distance_matrix is not None):
-    #             curr_matrix = distance_matrix
-
-    #         sequences_by_name = OrderedDict()
-
-    #         for sequence in Bio.SeqIO.parse(alignment, "fasta"):
-    #             sequences_by_name[sequence.id] = str(sequence.seq)
-
-    #         if (sequence_names is not None):
-    #             if (sequence_names != list(sequences_by_name.keys)):
-    #                 print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
-    #                 sys.exit(1)
-
-    #         sequence_names = list(sequences_by_name.keys())
-    #         if args.command != "pca" and distance_matrix is None:
-    #             # Calculate Distance Matrix
-    #             hamming_distances = get_hamming_distances(
-    #                 list(sequences_by_name.values()),
-    #                 args.indel_distance,
-    #             )
-    #             distance_matrix = pd.DataFrame(squareform(hamming_distances))
-    #             distance_matrix.index = sequence_names
-    #             distance_matrix = curr_matrix + distance_matrix
-
-
-    if args.alignment is not None and distance_matrix is None:
+    if args.alignment is not None and distance_matrix is None and args.command != "pca":
         for alignment in args.alignment:
             sequences_by_name = OrderedDict()
 
@@ -323,7 +295,7 @@ def embed(args):
             seq_sorted = sorted(list(sequences_by_name.keys()))
             if (sequence_names is not None):
                 if (sequence_names != seq_sorted):
-                    print("The strains in the multiple alignments must match for concatenating them", file=sys.stderr)
+                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
                     sys.exit(1)
 
             sequence_names = seq_sorted
