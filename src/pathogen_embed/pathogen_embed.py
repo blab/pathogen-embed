@@ -228,6 +228,11 @@ def embed(args):
             other_distance_array = other_distance_df.values.astype(float)
             distance_array = distance_array + other_distance_array
 
+        # Confirm that the distance matrix is square.
+        if distance_array.shape[0] != distance_array.shape[1]:
+            print("ERROR: Distance matrices must be square (with the same number of rows and columns).")
+            sys.exit(1)
+
         distance_matrix = pd.DataFrame(distance_array, index=distance_df.index)
 
     # If we have alignments but no distance matrices and we need distances for
