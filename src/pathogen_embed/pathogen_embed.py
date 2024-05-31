@@ -185,21 +185,19 @@ def get_hamming_distances(genomes, count_indels=False):
     return hamming_distances
 
 def concat_distance_matrices(matrices):
-    # TODO: add error checking?
     result = matrices[0]
-
-    result_df = pd.read_csv(result, index_col=0)
-
+    result_df = pd.read_csv(result, index_col=0).sort_index(axis=0).sort_index(axis=1)
     result_arr = result_df.values.astype(float)
 
     # Add the numpy arrays element-wise
     for matrix in matrices[1:]:
-        other_df = pd.read_csv(matrix, index_col=0)
+        other_df = pd.read_csv(matrix, index_col=0).sort_index(axis=0).sort_index(axis=1)
+        assert np.array_equal(result_df.index.values, other_df.index.values)
         other_arr = other_df.values.astype(float)
 
         result_arr = result_arr + other_arr
 
-    return pd.DataFrame(result_arr)
+    return pd.DataFrame(result_arr, index=result_df.index)
 
 def embed(args):
     # Setting Random seed for numpy
@@ -227,12 +225,10 @@ def embed(args):
         print("If giving multiple alignments and distance matrices the number of both must match", file=sys.stderr)
         sys.exit(1)
 
-    set_index = False
     # getting or creating the distance matrix
     distance_matrix = None
     if args.distance_matrix is not None and args.command != "pca":
         distance_matrix = concat_distance_matrices(args.distance_matrix)
-        set_index = True
 
     # If we have alignments but no distance matrices and we need distances for
     # the method, calculate distances on the fly.
@@ -262,9 +258,6 @@ def embed(args):
                 distance_matrix = new_distance_matrix
             else:
                 distance_matrix += new_distance_matrix
-
-        if (set_index):
-            distance_matrix.index = sequence_names
 
     # Load embedding parameters from an external CSV file, if possible.
     external_embedding_parameters = None
