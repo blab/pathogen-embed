@@ -210,7 +210,11 @@ def embed(args):
         sys.exit(1)
 
     if args.alignment is None and args.command == "pca":
-        print("You must specify an alignment for pca, not a distance matrix", file=sys.stderr)
+        print("ERROR: PCA requires an alignment input to create the embedding.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.alignment is None and args.command == "t-sne":
+        print("ERROR: t-SNE requires an alignment input to initialize the embedding.", file=sys.stderr)
         sys.exit(1)
 
     if args.distance_matrix is not None and not all((distance_matrix.endswith(".csv") for distance_matrix in args.distance_matrix)):
