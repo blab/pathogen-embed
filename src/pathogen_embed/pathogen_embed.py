@@ -327,19 +327,20 @@ def embed(args):
                     sys.exit(1)
 
             sequence_names = seq_sorted
-
-            numbers = list(sequences_by_name.values())[:]
-            for i in range(0,len(list(sequences_by_name.values()))):
-                numbers[i] = re.sub(r'[^AGCT]', '5', numbers[i])
-                numbers[i] = list(numbers[i].replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
-                numbers[i] = [int(j) for j in numbers[i]]
+            numbers = []
+            for sequence_name in seq_sorted:
+                sequence = sequences_by_name[sequence_name]
+                sequence = re.sub(r'[^AGCT]', '5', sequence)
+                sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
+                sequence = [int(j) for j in sequence]
+                numbers.append(sequence)
 
             if genomes_df is None:
                 genomes_df = pd.DataFrame(numbers)
-                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
+                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[0]))]
             else:
                 second_df = pd.DataFrame(numbers)
-                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[i]))]
+                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[0]))]
                 genomes_df = pd.concat([genomes_df, second_df], axis=1)
         #performing PCA on my pandas dataframe
         pca = PCA(
