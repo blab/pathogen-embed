@@ -94,7 +94,7 @@ def get_hamming_distances(genomes, count_indels=False):
     >>> genomes = ["ACTGG", "A--GN", "A-NGG"]
     >>> get_hamming_distances(genomes, True)
     [1, 1, 1]
-f
+
     When counting indels, we ignore leading and trailing gaps that indicate
     different sequence lengths and not biological events.
 
