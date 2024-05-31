@@ -184,21 +184,6 @@ def get_hamming_distances(genomes, count_indels=False):
 
     return hamming_distances
 
-def concat_distance_matrices(matrices):
-    result = matrices[0]
-    result_df = pd.read_csv(result, index_col=0).sort_index(axis=0).sort_index(axis=1)
-    result_arr = result_df.values.astype(float)
-
-    # Add the numpy arrays element-wise
-    for matrix in matrices[1:]:
-        other_df = pd.read_csv(matrix, index_col=0).sort_index(axis=0).sort_index(axis=1)
-        assert np.array_equal(result_df.index.values, other_df.index.values)
-        other_arr = other_df.values.astype(float)
-
-        result_arr = result_arr + other_arr
-
-    return pd.DataFrame(result_arr, index=result_df.index)
-
 def embed(args):
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
@@ -225,38 +210,54 @@ def embed(args):
         print("If giving multiple alignments and distance matrices the number of both must match", file=sys.stderr)
         sys.exit(1)
 
-    # getting or creating the distance matrix
+    # Load distance matrices, if they have been provided, and sum them across
+    # all inputs.
     distance_matrix = None
     if args.distance_matrix is not None and args.command != "pca":
-        distance_matrix = concat_distance_matrices(args.distance_matrix)
+        distance_path = args.distance_matrix[0]
+        distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+        distance_array = distance_df.values.astype(float)
+
+        # Add the numpy arrays element-wise
+        for distance_path in args.distance_matrix[1:]:
+            other_distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+            if not np.array_equal(distance_df.index.values, other_distance_df.index.values):
+                print("ERROR: The given distance matrices do not have the same sequence names.", file=sys.stderr)
+                sys.exit(1)
+
+            other_distance_array = other_distance_df.values.astype(float)
+            distance_array = distance_array + other_distance_array
+
+        distance_matrix = pd.DataFrame(distance_array, index=distance_df.index)
 
     # If we have alignments but no distance matrices and we need distances for
     # the method, calculate distances on the fly.
-    sequence_names = None
     if args.alignment is not None and distance_matrix is None and args.command != "pca":
         for alignment in args.alignment:
-            sequences_by_name = OrderedDict()
-
-            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
-                sequences_by_name[sequence.id] = str(sequence.seq)
-
-            seq_sorted = sorted(list(sequences_by_name.keys()))
-            if sequence_names is not None and sorted(sequence_names) != seq_sorted:
-                print("The strains in the multiple alignments must match before concatenating them", file=sys.stderr)
-                sys.exit(1)
-
-            sequence_names = seq_sorted #list(sequences_by_name.keys())
-
-            # assert sequence_names == list(sequences_by_name.keys())
-
-            # Calculate Distance Matrix
-            hamming_distances = get_hamming_distances(list(sequences_by_name.values()), args.indel_distance)
-            new_distance_matrix = pd.DataFrame(squareform(hamming_distances))
-            new_distance_matrix.index = sequence_names
+            # Calculate a distance matrix on the fly and sort the matrix
+            # alphabetically by sequence name, so we can safely sum values
+            # across all inputs.
+            new_distance_matrix = calculate_distances_from_alignment(
+                alignment,
+                args.indel_distance,
+            ).sort_index(
+                axis=0,
+            ).sort_index(
+                axis=1,
+            )
 
             if distance_matrix is None:
                 distance_matrix = new_distance_matrix
             else:
+                # Confirm that we have the same strain names in the same order
+                # for each matrix.
+                if not np.array_equal(
+                    new_distance_matrix.index.values,
+                    distance_matrix.index.values,
+                ):
+                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+                    sys.exit(1)
+
                 distance_matrix += new_distance_matrix
 
     # Load embedding parameters from an external CSV file, if possible.
@@ -536,20 +537,27 @@ def cluster(args):
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
 
-def distance(args):
+def calculate_distances_from_alignment(alignment_path, indel_distance):
     sequences_by_name = OrderedDict()
 
-    for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
     sequence_names = list(sequences_by_name.keys())
 
     hamming_distances = get_hamming_distances(
         list(sequences_by_name.values()),
-        args.indel_distance,
+        indel_distance,
     )
     distance_matrix = pd.DataFrame(squareform(hamming_distances))
     distance_matrix.index = sequence_names
     distance_matrix.columns = distance_matrix.index
 
+    return distance_matrix
+
+def distance(args):
+    distance_matrix = calculate_distances_from_alignment(
+        args.alignment,
+        args.indel_distance,
+    )
     distance_matrix.to_csv(args.output)
