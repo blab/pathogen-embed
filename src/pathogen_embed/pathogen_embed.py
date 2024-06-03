@@ -317,6 +317,17 @@ def embed(args):
                 second_df = pd.DataFrame(numbers)
                 second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[0]))]
                 genomes_df = pd.concat([genomes_df, second_df], axis=1)
+
+        # If we're using PCA to initialize the t-SNE embedding, confirm that the
+        # input alignments used for PCA have the same sequence names as the
+        # input distance matrices.
+        if (
+                args.command == "t-sne" and
+                not np.array_equal(distance_matrix.index.values, np.array(sequence_names))
+        ):
+            print("ERROR: The sequence names for the distance matrix inputs do not match the names in the alignment inputs.", file=sys.stderr)
+            sys.exit(1)
+
         #performing PCA on my pandas dataframe
         pca = PCA(
             n_components=n_components,
