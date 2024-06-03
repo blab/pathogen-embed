@@ -205,9 +205,7 @@ def embed(args):
             sys.exit(1)
 
     if args.alignment is not None and args.distance_matrix is not None and len(args.alignment) != len(args.distance_matrix):
-        print(len(args.alignment))
-        print(len(args.distance_matrix))
-        print("If giving multiple alignments and distance matrices the number of both must match", file=sys.stderr)
+        print("ERROR: If giving multiple alignments and distance matrices the number of both must match.", file=sys.stderr)
         sys.exit(1)
 
     # Load distance matrices, if they have been provided, and sum them across
