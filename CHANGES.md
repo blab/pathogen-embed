@@ -9,7 +9,8 @@
 
 ### Features
 
-* Add optional output from pathogen-embed that produces the boxplot figure of Euclidean by genetic distance ([#14][])
+* Add support for multiple alignment and/or distance matrix inputs to `pathogen-embed` ([#19][])
+* Add optional output from `pathogen-embed` that produces the boxplot figure of Euclidean by genetic distance ([#14][])
 
 ### Bug Fixes
 
@@ -18,6 +19,7 @@
 [#12]: https://github.com/blab/pathogen-embed/pull/12
 [#13]: https://github.com/blab/pathogen-embed/pull/13
 [#14]: https://github.com/blab/pathogen-embed/pull/14
+[#19]: https://github.com/blab/pathogen-embed/pull/19
 
 ## 1.1.2
 
