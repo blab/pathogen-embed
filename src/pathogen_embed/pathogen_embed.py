@@ -184,7 +184,6 @@ def get_hamming_distances(genomes, count_indels=False):
 
     return hamming_distances
 
-
 def embed(args):
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
@@ -194,32 +193,75 @@ def embed(args):
         sys.exit(1)
 
     if args.alignment is None and args.command == "pca":
-        print("You must specify an alignment for pca, not a distance matrix", file=sys.stderr)
+        print("ERROR: PCA requires an alignment input to create the embedding.", file=sys.stderr)
         sys.exit(1)
-    # getting or creating the distance matrix
+
+    if args.alignment is None and args.command == "t-sne":
+        print("ERROR: t-SNE requires an alignment input to initialize the embedding.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.distance_matrix is not None and not all((distance_matrix.endswith(".csv") for distance_matrix in args.distance_matrix)):
+        print("ERROR: The distance matrix input(s) must be in comma-separate value (CSV) format.", file=sys.stderr)
+        sys.exit(1)
+
+    if args.alignment is not None and args.distance_matrix is not None and len(args.alignment) != len(args.distance_matrix):
+        print("ERROR: If giving multiple alignments and distance matrices the number of both must match.", file=sys.stderr)
+        sys.exit(1)
+
+    # Load distance matrices, if they have been provided, and sum them across
+    # all inputs.
     distance_matrix = None
-    if args.distance_matrix is not None:
-        if not args.distance_matrix.endswith('.csv'):
-            print("You must supply a CSV file for distance_matrix.", file=sys.stderr)
+    if args.distance_matrix is not None and args.command != "pca":
+        distance_path = args.distance_matrix[0]
+        distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+        distance_array = distance_df.values.astype(float)
+
+        # Add the numpy arrays element-wise
+        for distance_path in args.distance_matrix[1:]:
+            other_distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+            if not np.array_equal(distance_df.index.values, other_distance_df.index.values):
+                print("ERROR: The given distance matrices do not have the same sequence names.", file=sys.stderr)
+                sys.exit(1)
+
+            other_distance_array = other_distance_df.values.astype(float)
+            distance_array = distance_array + other_distance_array
+
+        # Confirm that the distance matrix is square.
+        if distance_array.shape[0] != distance_array.shape[1]:
+            print("ERROR: Distance matrices must be square (with the same number of rows and columns).")
             sys.exit(1)
-        else: 
-            distance_matrix  = pd.read_csv(args.distance_matrix, index_col=0)
 
-    if args.alignment is not None:
-        sequences_by_name = OrderedDict()
+        distance_matrix = pd.DataFrame(distance_array, index=distance_df.index)
 
-        for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
-            sequences_by_name[sequence.id] = str(sequence.seq)
-
-        sequence_names = list(sequences_by_name.keys())
-        if args.command != "pca" and distance_matrix is None:
-            # Calculate Distance Matrix
-            hamming_distances = get_hamming_distances(
-                list(sequences_by_name.values()),
+    # If we have alignments but no distance matrices and we need distances for
+    # the method, calculate distances on the fly.
+    if args.alignment is not None and distance_matrix is None and args.command != "pca":
+        for alignment in args.alignment:
+            # Calculate a distance matrix on the fly and sort the matrix
+            # alphabetically by sequence name, so we can safely sum values
+            # across all inputs.
+            new_distance_matrix = calculate_distances_from_alignment(
+                alignment,
                 args.indel_distance,
+            ).sort_index(
+                axis=0,
+            ).sort_index(
+                axis=1,
             )
-            distance_matrix = pd.DataFrame(squareform(hamming_distances))
-            distance_matrix.index = sequence_names
+
+            if distance_matrix is None:
+                distance_matrix = new_distance_matrix
+            else:
+                # Confirm that we have the same strain names in the same order
+                # for each matrix.
+                if not np.array_equal(
+                    new_distance_matrix.index.values,
+                    distance_matrix.index.values,
+                ):
+                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+                    sys.exit(1)
+
+                distance_matrix += new_distance_matrix
 
     # Load embedding parameters from an external CSV file, if possible.
     external_embedding_parameters = None
@@ -227,7 +269,7 @@ def embed(args):
         if not args.embedding_parameters.endswith('.csv'):
             print("You must supply a CSV file for embedding parameters.", file=sys.stderr)
             sys.exit(1)
-        else: 
+        else:
             external_embedding_parameters_df = pd.read_csv(args.embedding_parameters)
 
         # Get a dictionary of additional parameters provided by the external
@@ -242,17 +284,47 @@ def embed(args):
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
-        sequence_names = list(sequences_by_name.keys())
+        genomes_df = None
+        sequence_names = None
+        for alignment in args.alignment:
 
-        numbers = list(sequences_by_name.values())[:]
-        for i in range(0,len(list(sequences_by_name.values()))):
-            numbers[i] = re.sub(r'[^AGCT]', '5', numbers[i])
-            numbers[i] = list(numbers[i].replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
-            numbers[i] = [int(j) for j in numbers[i]]
+            sequences_by_name = OrderedDict()
 
-        genomes_df = pd.DataFrame(numbers)
-        genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[i]))]
+            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
+                sequences_by_name[sequence.id] = str(sequence.seq)
 
+            seq_sorted = sorted(list(sequences_by_name.keys()))
+            if (sequence_names is not None):
+                if (sequence_names != seq_sorted):
+                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+                    sys.exit(1)
+
+            sequence_names = seq_sorted
+            numbers = []
+            for sequence_name in seq_sorted:
+                sequence = sequences_by_name[sequence_name]
+                sequence = re.sub(r'[^AGCT]', '5', sequence)
+                sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
+                sequence = [int(j) for j in sequence]
+                numbers.append(sequence)
+
+            if genomes_df is None:
+                genomes_df = pd.DataFrame(numbers)
+                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[0]))]
+            else:
+                second_df = pd.DataFrame(numbers)
+                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[0]))]
+                genomes_df = pd.concat([genomes_df, second_df], axis=1)
+
+        # If we're using PCA to initialize the t-SNE embedding, confirm that the
+        # input alignments used for PCA have the same sequence names as the
+        # input distance matrices.
+        if (
+                args.command == "t-sne" and
+                not np.array_equal(distance_matrix.index.values, np.array(sequence_names))
+        ):
+            print("ERROR: The sequence names for the distance matrix inputs do not match the names in the alignment inputs.", file=sys.stderr)
+            sys.exit(1)
 
         #performing PCA on my pandas dataframe
         pca = PCA(
@@ -311,6 +383,7 @@ def embed(args):
                 embedding_parameters[key] = value_type(value)
 
     if args.command != "pca":
+        #TODO: distance matrices are no longer symmetrics/not square? Check into this
         embedder = embedding_class(**embedding_parameters)
         embedding = embedder.fit_transform(distance_matrix)
 
@@ -371,7 +444,10 @@ def embed(args):
         # Group Euclidean distances across the range of observed genetic
         # distances, so we can make a separate boxplot of Euclidean distances
         # per genetic distance value.
-        genetic_distance_range = range(genetic_distances.min(), genetic_distances.max() + 1)
+        genetic_distance_range = range(
+            int(genetic_distances.min()),
+            int(genetic_distances.max()) + 1,
+        )
         grouped_euclidean_distances = []
         for genetic_distance in genetic_distance_range:
             grouped_euclidean_distances.append(
@@ -416,9 +492,6 @@ def embed(args):
         ax.xaxis.set_major_formatter(distance_tick_formatter)
         ax.xaxis.set_major_locator(MultipleLocator(5))
 
-        ax.yaxis.set_major_formatter(distance_tick_formatter)
-        ax.yaxis.set_major_locator(MultipleLocator(5))
-
         ax.set_xlim(left=-1)
         ax.set_ylim(bottom=-1)
 
@@ -431,7 +504,7 @@ def cluster(args):
     if not args.embedding.endswith('.csv'):
         print("You must supply a CSV file for the embedding.", file=sys.stderr)
         sys.exit(1)
-    else: 
+    else:
         embedding_df = pd.read_csv(args.embedding, index_col=0)
 
     clustering_parameters = {
@@ -478,20 +551,27 @@ def cluster(args):
     if args.output_dataframe is not None:
         embedding_df.to_csv(args.output_dataframe, index_label="strain")
 
-def distance(args):
+def calculate_distances_from_alignment(alignment_path, indel_distance):
     sequences_by_name = OrderedDict()
 
-    for sequence in Bio.SeqIO.parse(args.alignment, "fasta"):
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
     sequence_names = list(sequences_by_name.keys())
 
     hamming_distances = get_hamming_distances(
         list(sequences_by_name.values()),
-        args.indel_distance,
+        indel_distance,
     )
     distance_matrix = pd.DataFrame(squareform(hamming_distances))
     distance_matrix.index = sequence_names
     distance_matrix.columns = distance_matrix.index
 
+    return distance_matrix
+
+def distance(args):
+    distance_matrix = calculate_distances_from_alignment(
+        args.alignment,
+        args.indel_distance,
+    )
     distance_matrix.to_csv(args.output)

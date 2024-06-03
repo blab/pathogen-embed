@@ -1,3 +1,7 @@
+Always use the simplest Numba threading layer, to avoid lower-level OMP warnings.
+
+  $ export NUMBA_THREADING_LAYER=workqueue
+
 Run pathogen-embed with UMAP on a H3N2 HA alignment.
 
   $ pathogen-embed \
