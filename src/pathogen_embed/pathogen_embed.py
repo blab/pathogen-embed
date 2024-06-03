@@ -494,9 +494,6 @@ def embed(args):
         ax.xaxis.set_major_formatter(distance_tick_formatter)
         ax.xaxis.set_major_locator(MultipleLocator(5))
 
-        ax.yaxis.set_major_formatter(distance_tick_formatter)
-        ax.yaxis.set_major_locator(MultipleLocator(5))
-
         ax.set_xlim(left=-1)
         ax.set_ylim(bottom=-1)
 

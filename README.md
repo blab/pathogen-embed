@@ -119,6 +119,10 @@ pathogen-cluster \
   --output-figure tsne_with_clusters.pdf
 ```
 
+Compare the resulting embedding and clusters to the embedding above from only HA sequences, to get a sense of how including the NA sequences affects the results.
+
+![Example t-SNE embedding of seasonal influenza A/H3N2 hemagglutinin and neuraminidase sequences colored by the cluster label assigned by pathogen-cluster](images/example-tsne-ha-na-embedding-with-clusters.png)
+
 ## Build documentation
 
 Build the [Documentation](https://blab.github.io/pathogen-embed/):
