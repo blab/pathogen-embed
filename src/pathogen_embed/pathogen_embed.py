@@ -201,8 +201,8 @@ def embed(args):
         sys.exit(1)
 
     if args.distance_matrix is not None and not all((distance_matrix.endswith(".csv") for distance_matrix in args.distance_matrix)):
-            print("ERROR: The distance matrix input(s) must be in comma-separate value (CSV) format.", file=sys.stderr)
-            sys.exit(1)
+        print("ERROR: The distance matrix input(s) must be in comma-separate value (CSV) format.", file=sys.stderr)
+        sys.exit(1)
 
     if args.alignment is not None and args.distance_matrix is not None and len(args.alignment) != len(args.distance_matrix):
         print("ERROR: If giving multiple alignments and distance matrices the number of both must match.", file=sys.stderr)
