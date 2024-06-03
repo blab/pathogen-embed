@@ -1,3 +1,7 @@
+Always use the simplest Numba threading layer, to avoid lower-level OMP warnings.
+
+  $ export NUMBA_THREADING_LAYER=workqueue
+
 Get a distance matrix from a H3N2 HA alignment.
 
   $ pathogen-distance \
