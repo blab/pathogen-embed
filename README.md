@@ -76,6 +76,49 @@ These unassigned samples receive a cluster label of "-1".
 
 If you know the minimum genetic distance you want to require between clusters, you can use the equation from the pairwise distance figure above to determine the corresponding minimum Euclidean distance to pass to `pathogen-cluster`'s `--distance-threshold` argument.
 
+## Example: Identify reassortment groups from multiple gene alignments
+
+To identify potential reassortment groups for viruses with segmented genomes, you can calculate one distance matrix per gene and pass multiple distance matrices to `pathogen-embed`.
+Internally, `pathogen-embed` sums the given distances matrices into a single matrix to use for an embedding.
+The clusters in the resulting embedding represent genetic diversity in each gene individually and potential reassortment between genes.
+The following example shows how to apply this approach to alignments for seasonal influenza A/H3N2 HA and NA.
+
+Calculate a distance matrix for both HA and NA alignments.
+
+```bash
+pathogen-distance \
+  --alignment tests/data/h3n2_ha_alignment.fasta \
+  --output ha_distances.csv
+
+pathogen-distance \
+  --alignment tests/data/h3n2_na_alignment.fasta \
+  --output na_distances.csv
+```
+
+Create a t-SNE embedding using the HA/NA alignments and distance matrices.
+The t-SNE embedding gets initialized by a PCA embedding from the alignments.
+
+```bash
+pathogen-embed \
+  --alignment tests/data/h3n2_ha_alignment.fasta tests/data/h3n2_na_alignment.fasta \
+  --distance-matrix ha_distances.csv na_distances.csv \
+  --output-dataframe tsne.csv \
+  --output-figure tsne.pdf \
+  --output-pairwise-distance-figure tsne_pairwise_distances.pdf \
+  t-sne \
+    --perplexity 45.0
+```
+
+Finally, find clusters in the embedding which represent the within and between diversity of the given HA and NA sequences.
+
+```bash
+pathogen-cluster \
+  --embedding tsne.csv \
+  --label-attribute tsne_label \
+  --output-dataframe tsne_with_clusters.csv \
+  --output-figure tsne_with_clusters.pdf
+```
+
 ## Build documentation
 
 Build the [Documentation](https://blab.github.io/pathogen-embed/):
