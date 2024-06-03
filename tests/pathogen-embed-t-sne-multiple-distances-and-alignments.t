@@ -16,6 +16,8 @@ Run pathogen-embed with t-SNE on distances from H3N2 HA and H3N2 NA alignments.
   >   --alignment $TESTDIR/data/h3n2_ha_alignment.fasta $TESTDIR/data/h3n2_na_alignment.fasta \
   >   --distance-matrix ha_distances.csv na_distances.csv \
   >   --output-dataframe embed_t-sne.csv \
+  >   --output-figure embed_t-sne.pdf \
+  >   --output-pairwise-distance-figure t-sne_pairwise_distances.pdf \
   >   t-sne
 
 There should be one record in the embedding per input sequence in the alignment.

@@ -446,7 +446,10 @@ def embed(args):
         # Group Euclidean distances across the range of observed genetic
         # distances, so we can make a separate boxplot of Euclidean distances
         # per genetic distance value.
-        genetic_distance_range = range(genetic_distances.min(), genetic_distances.max() + 1)
+        genetic_distance_range = range(
+            int(genetic_distances.min()),
+            int(genetic_distances.max()) + 1,
+        )
         grouped_euclidean_distances = []
         for genetic_distance in genetic_distance_range:
             grouped_euclidean_distances.append(
