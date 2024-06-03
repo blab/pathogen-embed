@@ -46,7 +46,7 @@ pathogen-embed \
   --output-figure tsne.pdf \
   --output-pairwise-distance-figure tsne_pairwise_distances.pdf \
   t-sne \
-    --perplexity 50.0
+    --perplexity 45.0
 ```
 
 The following figure shows the resulting embedding.
