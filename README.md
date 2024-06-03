@@ -83,7 +83,7 @@ Internally, `pathogen-embed` sums the given distances matrices into a single mat
 The clusters in the resulting embedding represent genetic diversity in each gene individually and potential reassortment between genes.
 The following example shows how to apply this approach to alignments for seasonal influenza A/H3N2 HA and NA.
 
-Calculate a distance matrix for both HA and NA alignments.
+Calculate a separate distance matrix per gene alignment for HA and NA.
 
 ```bash
 pathogen-distance \
