@@ -1,6 +1,7 @@
 # pathogen-embed
 
 [![PyPI version](https://badge.fury.io/py/pathogen-embed.svg)](https://pypi.org/project/pathogen-embed/)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/pathogen-embed/README.html)
 
 Create reduced dimension embeddings for pathogen sequences
 
@@ -13,10 +14,16 @@ pathogen-embed is an open-source software to run reduced dimension embeddings (P
 
 ## Installation
 
-Simply install the package using pip.
+### With pip
 
 ```
 pip install pathogen-embed
+```
+
+### With Conda
+
+```
+conda install -c conda-forge -c bioconda pathogen-embed
 ```
 
 ## Quickstart
