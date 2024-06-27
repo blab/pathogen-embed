@@ -65,6 +65,36 @@ def find_ranges(positions):
     return ranges
 
 
+def encode_alignment_for_pca_by_integer(alignment_path):
+    """Return a data frame representing a N x L matrix encoding of the alignment
+    (with N alignment sequences of length L) in the given file path with each
+    nucleotide character represented as an integer from 1 to 5 with all non-ACTG
+    characters encoded as 5. The index of the data frame contains the sequence
+    name for each input sequence.
+
+    """
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence = re.sub(r'[^AGCT]', '5', sequence)
+        sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
+        sequence = [int(j) for j in sequence]
+        numbers.append(sequence)
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    )
+
+    return genomes_df
+
+
 def get_hamming_distances(genomes, count_indels=False):
     """Calculate pairwise Hamming distances between the given list of genomes
     and return the nonredundant array of values for use with scipy's squareform function.
@@ -284,44 +314,38 @@ def embed(args):
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
-        genomes_df = None
-        sequence_names = None
+        genomes_dfs = []
+        column_offset = 0
         for alignment in args.alignment:
+            genomes_df = encode_alignment_for_pca_by_integer(alignment)
+            genomes_df.columns = [
+                "Site " + str(k)
+                for k in range(column_offset, column_offset + genomes_df.shape[1])
+            ]
+            column_offset += genomes_df.shape[1]
+            genomes_dfs.append(genomes_df)
 
-            sequences_by_name = OrderedDict()
+        all_alignments_have_same_sequence_names = all(
+            (
+                np.array_equal(alignment.index.values, genomes_dfs[0].index.values)
+                for alignment in genomes_dfs
+            )
+        )
+        if not all_alignments_have_same_sequence_names:
+            print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+            sys.exit(1)
 
-            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
-                sequences_by_name[sequence.id] = str(sequence.seq)
-
-            seq_sorted = sorted(list(sequences_by_name.keys()))
-            if (sequence_names is not None):
-                if (sequence_names != seq_sorted):
-                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
-                    sys.exit(1)
-
-            sequence_names = seq_sorted
-            numbers = []
-            for sequence_name in seq_sorted:
-                sequence = sequences_by_name[sequence_name]
-                sequence = re.sub(r'[^AGCT]', '5', sequence)
-                sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
-                sequence = [int(j) for j in sequence]
-                numbers.append(sequence)
-
-            if genomes_df is None:
-                genomes_df = pd.DataFrame(numbers)
-                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[0]))]
-            else:
-                second_df = pd.DataFrame(numbers)
-                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[0]))]
-                genomes_df = pd.concat([genomes_df, second_df], axis=1)
+        # Combine matrix encodings for all alignments, after confirming that
+        # they represent the same sequence names.
+        genomes_df = pd.concat(genomes_dfs, axis=1)
+        sequence_names = genomes_df.index.values
 
         # If we're using PCA to initialize the t-SNE embedding, confirm that the
         # input alignments used for PCA have the same sequence names as the
         # input distance matrices.
         if (
                 args.command == "t-sne" and
-                not np.array_equal(distance_matrix.index.values, np.array(sequence_names))
+                not np.array_equal(distance_matrix.index.values, sequence_names)
         ):
             print("ERROR: The sequence names for the distance matrix inputs do not match the names in the alignment inputs.", file=sys.stderr)
             sys.exit(1)
