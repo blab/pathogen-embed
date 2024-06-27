@@ -33,6 +33,7 @@ def make_parser_embed():
     )
 
     pca = subparsers.add_parser("pca", description="Principal Component Analysis", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    pca.add_argument("--encoding", default="integer", choices=["integer", "genotype", "simplex"], help="method to use to encode the given sequence alignment as a matrix for input to PCA")
     pca.add_argument("--components", default=10, type=int, help="the number of components for PCA")
     pca.add_argument("--explained-variance", help="the path for the CSV explained variance for each component")
 

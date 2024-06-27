@@ -69,8 +69,10 @@ def encode_alignment_for_pca_by_integer(alignment_path):
     """Return a data frame representing a N x L matrix encoding of the alignment
     (with N alignment sequences of length L) in the given file path with each
     nucleotide character represented as an integer from 1 to 5 with all non-ACTG
-    characters encoded as 5. The index of the data frame contains the sequence
-    name for each input sequence.
+    characters encoded as 5.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
 
     """
     sequences_by_name = OrderedDict()
@@ -86,6 +88,100 @@ def encode_alignment_for_pca_by_integer(alignment_path):
         sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
         sequence = [int(j) for j in sequence]
         numbers.append(sequence)
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    )
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_genotype(alignment_path):
+    """Return a data frame representing a N x 4L matrix encoding of the
+    alignment (with N alignment sequences of length L) in the given file path
+    with each position and allele combination (genotype) represented as a binary
+    integer value. For example, the presence of an "A" allele in the first
+    position of an alignment would cause the first four columns of the
+    corresponding matrix row to be [1, 0, 0, 0].
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    nucleotide_to_binary = {
+        "A": np.array([1, 0, 0, 0], dtype=bool),
+        "C": np.array([0, 1, 0, 0], dtype=bool),
+        "G": np.array([0, 0, 1, 0], dtype=bool),
+        "T": np.array([0, 0, 0, 1], dtype=bool),
+    }
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence_numbers = []
+        for position in range(len(sequence)):
+            sequence_numbers.append(
+                nucleotide_to_binary.get(
+                    sequence[position].upper(),
+                    np.array([0, 0, 0, 0], dtype=bool),
+                )
+            )
+
+        numbers.append(np.array(sequence_numbers, dtype=bool).flatten())
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    ).astype(np.int8)
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_simplex(alignment_path):
+    """Return a data frame representing a N x 3L matrix encoding of the
+    alignment (with N alignment sequences of length L) in the given file path
+    with each position by three binary values corresponding to a simplex
+    representation of the allele at that position as described in Stormo 2011
+    (https://academic.oup.com/genetics/article/187/4/1219/6063441). For example,
+    the presence of an "A" allele in the first position of an alignment would
+    cause the first three columns of the corresponding matrix row to be [1, -1, -1].
+    All non-ACGT characters get represented by a tuple of zeros.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    nucleotide_to_binary = {
+        "A": np.array([1, -1, -1], dtype=np.int8),
+        "C": np.array([-1, 1, -1], dtype=np.int8),
+        "G": np.array([-1, -1, 1], dtype=np.int8),
+        "T": np.array([1, 1, 1], dtype=np.int8),
+    }
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence_numbers = []
+        for position in range(len(sequence)):
+            sequence_numbers.append(
+                nucleotide_to_binary.get(
+                    sequence[position].upper(),
+                    np.array([0, 0, 0], dtype=np.int8),
+                )
+            )
+
+        numbers.append(np.array(sequence_numbers, dtype=np.int8).flatten())
 
     genomes_df = pd.DataFrame(
         numbers,
@@ -317,7 +413,13 @@ def embed(args):
         genomes_dfs = []
         column_offset = 0
         for alignment in args.alignment:
-            genomes_df = encode_alignment_for_pca_by_integer(alignment)
+            if args.encoding == "integer":
+                genomes_df = encode_alignment_for_pca_by_integer(alignment)
+            elif args.encoding == "genotype":
+                genomes_df = encode_alignment_for_pca_by_genotype(alignment)
+            elif args.encoding == "simplex":
+                genomes_df = encode_alignment_for_pca_by_simplex(alignment)
+
             genomes_df.columns = [
                 "Site " + str(k)
                 for k in range(column_offset, column_offset + genomes_df.shape[1])
