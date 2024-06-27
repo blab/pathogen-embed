@@ -8,6 +8,7 @@ warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 
 import matplotlib; matplotlib.set_loglevel("critical")
 import argparse
+import Bio.AlignIO
 import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
@@ -187,6 +188,50 @@ def encode_alignment_for_pca_by_simplex(alignment_path):
         numbers,
         index=sequence_names,
     )
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_biallelic(alignment_path):
+    """Return a data frame representing a N x L matrix encoding of the alignment
+    (with N alignment sequences of length L(b) where b identicates biallelic
+    positions) in the given file path with each biallelic position represented
+    by a binary value where 0 is the reference allele and 1 is the alternate
+    allele. The function determines the "reference" allele based on the first
+    sequence in the alignment. The alternate allele is the only other ACGT
+    allele present in the remaining sequences at that position.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    valid_nucleotides = {"A", "C", "G", "T"}
+    alignment = Bio.AlignIO.read(alignment_path, "fasta")
+    reference_sequence = str(alignment[0].seq)
+
+    # Find biallelic positions in the alignment.
+    biallelic_positions = []
+    for position in range(alignment.get_alignment_length()):
+        distinct_nucleotides = set(alignment[:, position].upper()) & valid_nucleotides
+        if len(distinct_nucleotides) == 2:
+            biallelic_positions.append(position)
+
+    # Create a binary matrix to represent alternate alleles at known biallelic
+    # positions.
+    numbers = np.zeros((len(alignment), len(biallelic_positions)), dtype=bool)
+    sequence_names = []
+    for sequence_index, sequence in enumerate(alignment):
+        sequence_names.append(sequence.name)
+
+        for position_index, position in enumerate(biallelic_positions):
+            if (sequence[position].upper() in valid_nucleotides and
+                sequence[position].upper() != reference_sequence[position].upper()):
+                numbers[sequence_index, position_index] = True
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    ).astype(np.int8).sort_index()
 
     return genomes_df
 
@@ -419,6 +464,10 @@ def embed(args):
                 genomes_df = encode_alignment_for_pca_by_genotype(alignment)
             elif args.encoding == "simplex":
                 genomes_df = encode_alignment_for_pca_by_simplex(alignment)
+            elif args.encoding == "biallelic":
+                genomes_df = encode_alignment_for_pca_by_biallelic(alignment)
+            else:
+                raise NotImplementedError(f"PCA encoding by '{args.encoding}' is not supported.")
 
             genomes_df.columns = [
                 "Site " + str(k)
