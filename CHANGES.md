@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.1.0
+
+### Features
+
+* Add alternate encodings of nucleotide sequences for PCA in `pathogen-embed` ([#23][])
+
+[#23]: https://github.com/blab/pathogen-embed/pull/23
+
 ## 2.0.0
 
 ### Major Changes

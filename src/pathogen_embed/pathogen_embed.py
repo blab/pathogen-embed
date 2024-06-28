@@ -8,6 +8,7 @@ warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 
 import matplotlib; matplotlib.set_loglevel("critical")
 import argparse
+import Bio.AlignIO
 import Bio.SeqIO
 from collections import OrderedDict
 import hdbscan
@@ -63,6 +64,176 @@ def find_ranges(positions):
             end = i + 1
 
     return ranges
+
+
+def encode_alignment_for_pca_by_integer(alignment_path):
+    """Return a data frame representing a N x L matrix encoding of the alignment
+    (with N alignment sequences of length L) in the given file path with each
+    nucleotide character represented as an integer from 1 to 5 with all non-ACTG
+    characters encoded as 5.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence = re.sub(r'[^AGCT]', '5', sequence)
+        sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
+        sequence = [int(j) for j in sequence]
+        numbers.append(sequence)
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    )
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_genotype(alignment_path):
+    """Return a data frame representing a N x 4L matrix encoding of the
+    alignment (with N alignment sequences of length L) in the given file path
+    with each position and allele combination (genotype) represented as a binary
+    integer value. For example, the presence of an "A" allele in the first
+    position of an alignment would cause the first four columns of the
+    corresponding matrix row to be [1, 0, 0, 0].
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    nucleotide_to_binary = {
+        "A": np.array([1, 0, 0, 0], dtype=bool),
+        "C": np.array([0, 1, 0, 0], dtype=bool),
+        "G": np.array([0, 0, 1, 0], dtype=bool),
+        "T": np.array([0, 0, 0, 1], dtype=bool),
+    }
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence_numbers = []
+        for position in range(len(sequence)):
+            sequence_numbers.append(
+                nucleotide_to_binary.get(
+                    sequence[position].upper(),
+                    np.array([0, 0, 0, 0], dtype=bool),
+                )
+            )
+
+        numbers.append(np.array(sequence_numbers, dtype=bool).flatten())
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    ).astype(np.int8)
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_simplex(alignment_path):
+    """Return a data frame representing a N x 3L matrix encoding of the
+    alignment (with N alignment sequences of length L) in the given file path
+    with each position by three binary values corresponding to a simplex
+    representation of the allele at that position as described in Stormo 2011
+    (https://academic.oup.com/genetics/article/187/4/1219/6063441). For example,
+    the presence of an "A" allele in the first position of an alignment would
+    cause the first three columns of the corresponding matrix row to be [1, -1, -1].
+    All non-ACGT characters get represented by a tuple of zeros.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    nucleotide_to_binary = {
+        "A": np.array([1, -1, -1], dtype=np.int8),
+        "C": np.array([-1, 1, -1], dtype=np.int8),
+        "G": np.array([-1, -1, 1], dtype=np.int8),
+        "T": np.array([1, 1, 1], dtype=np.int8),
+    }
+    sequences_by_name = OrderedDict()
+
+    for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
+        sequences_by_name[sequence.id] = str(sequence.seq)
+
+    sequence_names = sorted(list(sequences_by_name.keys()))
+    numbers = []
+    for sequence_name in sequence_names:
+        sequence = sequences_by_name[sequence_name]
+        sequence_numbers = []
+        for position in range(len(sequence)):
+            sequence_numbers.append(
+                nucleotide_to_binary.get(
+                    sequence[position].upper(),
+                    np.array([0, 0, 0], dtype=np.int8),
+                )
+            )
+
+        numbers.append(np.array(sequence_numbers, dtype=np.int8).flatten())
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    )
+
+    return genomes_df
+
+
+def encode_alignment_for_pca_by_biallelic(alignment_path):
+    """Return a data frame representing a N x L matrix encoding of the alignment
+    (with N alignment sequences of length L(b) where b identicates biallelic
+    positions) in the given file path with each biallelic position represented
+    by a binary value where 0 is the reference allele and 1 is the alternate
+    allele. The function determines the "reference" allele based on the first
+    sequence in the alignment. The alternate allele is the only other ACGT
+    allele present in the remaining sequences at that position.
+
+    The index of the data frame contains the sequence name for each input
+    sequence.
+
+    """
+    valid_nucleotides = {"A", "C", "G", "T"}
+    alignment = Bio.AlignIO.read(alignment_path, "fasta")
+    reference_sequence = str(alignment[0].seq)
+
+    # Find biallelic positions in the alignment.
+    biallelic_positions = []
+    for position in range(alignment.get_alignment_length()):
+        distinct_nucleotides = set(alignment[:, position].upper()) & valid_nucleotides
+        if len(distinct_nucleotides) == 2:
+            biallelic_positions.append(position)
+
+    # Create a binary matrix to represent alternate alleles at known biallelic
+    # positions.
+    numbers = np.zeros((len(alignment), len(biallelic_positions)), dtype=bool)
+    sequence_names = []
+    for sequence_index, sequence in enumerate(alignment):
+        sequence_names.append(sequence.name)
+
+        for position_index, position in enumerate(biallelic_positions):
+            if (sequence[position].upper() in valid_nucleotides and
+                sequence[position].upper() != reference_sequence[position].upper()):
+                numbers[sequence_index, position_index] = True
+
+    genomes_df = pd.DataFrame(
+        numbers,
+        index=sequence_names,
+    ).astype(np.int8).sort_index()
+
+    return genomes_df
 
 
 def get_hamming_distances(genomes, count_indels=False):
@@ -235,7 +406,7 @@ def embed(args):
 
     # If we have alignments but no distance matrices and we need distances for
     # the method, calculate distances on the fly.
-    if args.alignment is not None and distance_matrix is None and args.command != "pca":
+    if args.alignment is not None and distance_matrix is None and (args.command != "pca" or args.output_pairwise_distance_figure):
         for alignment in args.alignment:
             # Calculate a distance matrix on the fly and sort the matrix
             # alphabetically by sequence name, so we can safely sum values
@@ -284,44 +455,53 @@ def embed(args):
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
-        genomes_df = None
-        sequence_names = None
+        if args.command == "pca":
+            encoding = args.encoding
+        else:
+            encoding = args.pca_encoding
+
+        genomes_dfs = []
+        column_offset = 0
         for alignment in args.alignment:
-
-            sequences_by_name = OrderedDict()
-
-            for sequence in Bio.SeqIO.parse(alignment, "fasta"):
-                sequences_by_name[sequence.id] = str(sequence.seq)
-
-            seq_sorted = sorted(list(sequences_by_name.keys()))
-            if (sequence_names is not None):
-                if (sequence_names != seq_sorted):
-                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
-                    sys.exit(1)
-
-            sequence_names = seq_sorted
-            numbers = []
-            for sequence_name in seq_sorted:
-                sequence = sequences_by_name[sequence_name]
-                sequence = re.sub(r'[^AGCT]', '5', sequence)
-                sequence = list(sequence.replace('A','1').replace('G','2').replace('C', '3').replace('T','4'))
-                sequence = [int(j) for j in sequence]
-                numbers.append(sequence)
-
-            if genomes_df is None:
-                genomes_df = pd.DataFrame(numbers)
-                genomes_df.columns = ["Site " + str(k) for k in range(0,len(numbers[0]))]
+            if encoding == "integer":
+                genomes_df = encode_alignment_for_pca_by_integer(alignment)
+            elif encoding == "genotype":
+                genomes_df = encode_alignment_for_pca_by_genotype(alignment)
+            elif encoding == "simplex":
+                genomes_df = encode_alignment_for_pca_by_simplex(alignment)
+            elif encoding == "biallelic":
+                genomes_df = encode_alignment_for_pca_by_biallelic(alignment)
             else:
-                second_df = pd.DataFrame(numbers)
-                second_df.columns = ["Site " + str(k) for k in range(genomes_df.shape[1],genomes_df.shape[1] + len(numbers[0]))]
-                genomes_df = pd.concat([genomes_df, second_df], axis=1)
+                raise NotImplementedError(f"PCA encoding by '{encoding}' is not supported.")
+
+            genomes_df.columns = [
+                "Site " + str(k)
+                for k in range(column_offset, column_offset + genomes_df.shape[1])
+            ]
+            column_offset += genomes_df.shape[1]
+            genomes_dfs.append(genomes_df)
+
+        all_alignments_have_same_sequence_names = all(
+            (
+                np.array_equal(alignment.index.values, genomes_dfs[0].index.values)
+                for alignment in genomes_dfs
+            )
+        )
+        if not all_alignments_have_same_sequence_names:
+            print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+            sys.exit(1)
+
+        # Combine matrix encodings for all alignments, after confirming that
+        # they represent the same sequence names.
+        genomes_df = pd.concat(genomes_dfs, axis=1)
+        sequence_names = genomes_df.index.values
 
         # If we're using PCA to initialize the t-SNE embedding, confirm that the
         # input alignments used for PCA have the same sequence names as the
         # input distance matrices.
         if (
                 args.command == "t-sne" and
-                not np.array_equal(distance_matrix.index.values, np.array(sequence_names))
+                not np.array_equal(distance_matrix.index.values, sequence_names)
         ):
             print("ERROR: The sequence names for the distance matrix inputs do not match the names in the alignment inputs.", file=sys.stderr)
             sys.exit(1)
