@@ -455,19 +455,24 @@ def embed(args):
 
     # Use PCA as its own embedding or as an initialization for t-SNE.
     if args.command == "pca" or args.command == "t-sne":
+        if args.command == "pca":
+            encoding = args.encoding
+        else:
+            encoding = args.pca_encoding
+
         genomes_dfs = []
         column_offset = 0
         for alignment in args.alignment:
-            if args.encoding == "integer":
+            if encoding == "integer":
                 genomes_df = encode_alignment_for_pca_by_integer(alignment)
-            elif args.encoding == "genotype":
+            elif encoding == "genotype":
                 genomes_df = encode_alignment_for_pca_by_genotype(alignment)
-            elif args.encoding == "simplex":
+            elif encoding == "simplex":
                 genomes_df = encode_alignment_for_pca_by_simplex(alignment)
-            elif args.encoding == "biallelic":
+            elif encoding == "biallelic":
                 genomes_df = encode_alignment_for_pca_by_biallelic(alignment)
             else:
-                raise NotImplementedError(f"PCA encoding by '{args.encoding}' is not supported.")
+                raise NotImplementedError(f"PCA encoding by '{encoding}' is not supported.")
 
             genomes_df.columns = [
                 "Site " + str(k)
