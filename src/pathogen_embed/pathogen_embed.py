@@ -406,7 +406,7 @@ def embed(args):
 
     # If we have alignments but no distance matrices and we need distances for
     # the method, calculate distances on the fly.
-    if args.alignment is not None and distance_matrix is None and args.command != "pca":
+    if args.alignment is not None and distance_matrix is None and (args.command != "pca" or args.output_pairwise_distance_figure):
         for alignment in args.alignment:
             # Calculate a distance matrix on the fly and sort the matrix
             # alphabetically by sequence name, so we can safely sum values
