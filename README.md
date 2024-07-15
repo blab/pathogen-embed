@@ -146,56 +146,33 @@ Clean the docs.
 make -C /docs clean
 ```
 
-## Releasing a new version
+## Releasing a new version on PyPI
 
-### Information about each file
+  1. Update `CHANGES.md` to reflect changes since the last release and set the correct version number for the new release at the top of the file.
+  1. Update the version number in `setup.py`.
+  1. [Create a new GitHub release](https://github.com/blab/pathogen-embed/releases/new), setting the same version number as above as the release tag and, optionally, generating release notes automatically.
+  When you select "Publish release", GitHub Actions will run the [publish workflow](https://github.com/blab/pathogen-embed/blob/main/.github/workflows/publish.yml) which uses [the pypi-publish action](https://github.com/marketplace/actions/pypi-publish) to create a new release on PyPI for you.
+  1. Create a pull request to bump the version of [the corresponding Bioconda package](https://github.com/bioconda/bioconda-recipes/blob/master/recipes/pathogen-embed/meta.yaml).
 
-#### README.md
+## Run tests during development
 
-contains the description of the package pathogen-embed.
-
-#### setup.py
-
-Gives PyPi the instructions about where to find dependent packages, the authors and relevant links, etc. Also gives the entry points for the console script, which tells Pypi to call the main function of __main__.py.
-
-#### __init__.py
-
-Initializes the package, creates the parser to parse the command line arguments and pass them into the embed.py function.
-
-#### __main__.py
-
-Calls the "run" function in __init__.py, which calls embed.py.
-
-#### embed.py
-
-The main code for the package.
-
-### To create new version
-
-Install build dependencies.
+Clone this repository locally.
 
 ``` bash
-python3 -m pip install --upgrade build twine
+git clone https://github.com/blab/pathogen-embed.git
+cd pathogen-embed
 ```
 
-Build distribution archives.
+Install an editable version of the package into a custom Conda environment.
 
-```bash
-python3 -m build
+``` bash
+conda create -n pathogen-embed python=3.11
+conda activate pathogen-embed
+python3 -m pip install -e '.[dev]'
 ```
-
-Upload archives to PyPI.
-
-```bash
-python3 -m twine upload dist/*
-```
-
-Input the username and password, upload new dist files to pypi. Make sure the version of the dist folders does not already exist within pypi.
-
-## Run tests
 
 Run tests with cram.
 
 ``` bash
-cram tests
+cram --shell=/bin/bash tests
 ```
