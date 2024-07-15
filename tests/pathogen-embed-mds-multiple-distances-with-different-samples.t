@@ -21,5 +21,5 @@ Run pathogen-embed with MDS on mismatched distances with different samples.
   >   --output-dataframe embed_mds.csv \
   >   mds \
   >   --components 2
-  ERROR: The given distance matrices do not have the same sequence names.
+  ERROR: The given distance matrices do not have the same sequence names in the same order.
   [1]

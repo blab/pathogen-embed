@@ -4,9 +4,11 @@
 
 ### Bug Fixes
 
+* Do not internally sort embedding inputs by sequence name ([#32][])
 * Let scikit-learn automatically pick SVD algorithm to use for PCA instead of hardcoding the "full" solver ([#31][])
 
 [#31]: https://github.com/blab/pathogen-embed/pull/31
+[#32]: https://github.com/blab/pathogen-embed/pull/32
 
 ## 2.2.0
 

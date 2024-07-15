@@ -10,5 +10,5 @@ This should fail.
   >   --alignment h3n2_ha_alignment.fasta h3n2_na_alignment.fasta \
   >   --output-dataframe embed_mds.csv \
   >   mds
-  ERROR: The given alignments do not have the same sequence names.
+  ERROR: The given alignments do not have the same sequence names in the same order. Confirm your alignments have the same sequence names and sort your alignments (e.g., `seqkit sort -n alignment.fasta > sorted_alignment.fasta`) so they have the same order.
   [1]

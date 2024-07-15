@@ -81,7 +81,7 @@ def encode_alignment_for_pca_by_integer(alignment_path):
     for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
-    sequence_names = sorted(list(sequences_by_name.keys()))
+    sequence_names = list(sequences_by_name.keys())
     numbers = []
     for sequence_name in sequence_names:
         sequence = sequences_by_name[sequence_name]
@@ -121,7 +121,7 @@ def encode_alignment_for_pca_by_genotype(alignment_path):
     for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
-    sequence_names = sorted(list(sequences_by_name.keys()))
+    sequence_names = list(sequences_by_name.keys())
     numbers = []
     for sequence_name in sequence_names:
         sequence = sequences_by_name[sequence_name]
@@ -169,7 +169,7 @@ def encode_alignment_for_pca_by_simplex(alignment_path):
     for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
         sequences_by_name[sequence.id] = str(sequence.seq)
 
-    sequence_names = sorted(list(sequences_by_name.keys()))
+    sequence_names = list(sequences_by_name.keys())
     numbers = []
     for sequence_name in sequence_names:
         sequence = sequences_by_name[sequence_name]
@@ -231,7 +231,7 @@ def encode_alignment_for_pca_by_biallelic(alignment_path):
     genomes_df = pd.DataFrame(
         numbers,
         index=sequence_names,
-    ).astype(np.int8).sort_index()
+    ).astype(np.int8)
 
     return genomes_df
 
@@ -384,14 +384,14 @@ def embed(args):
     distance_matrix = None
     if args.distance_matrix is not None and args.command != "pca":
         distance_path = args.distance_matrix[0]
-        distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+        distance_df = pd.read_csv(distance_path, index_col=0)
         distance_array = distance_df.values.astype(float)
 
         # Add the numpy arrays element-wise
         for distance_path in args.distance_matrix[1:]:
-            other_distance_df = pd.read_csv(distance_path, index_col=0).sort_index(axis=0).sort_index(axis=1)
+            other_distance_df = pd.read_csv(distance_path, index_col=0)
             if not np.array_equal(distance_df.index.values, other_distance_df.index.values):
-                print("ERROR: The given distance matrices do not have the same sequence names.", file=sys.stderr)
+                print("ERROR: The given distance matrices do not have the same sequence names in the same order.", file=sys.stderr)
                 sys.exit(1)
 
             other_distance_array = other_distance_df.values.astype(float)
@@ -408,16 +408,10 @@ def embed(args):
     # the method, calculate distances on the fly.
     if args.alignment is not None and distance_matrix is None and (args.command != "pca" or args.output_pairwise_distance_figure):
         for alignment in args.alignment:
-            # Calculate a distance matrix on the fly and sort the matrix
-            # alphabetically by sequence name, so we can safely sum values
-            # across all inputs.
+            # Calculate a distance matrix on the fly.
             new_distance_matrix = calculate_distances_from_alignment(
                 alignment,
                 args.indel_distance,
-            ).sort_index(
-                axis=0,
-            ).sort_index(
-                axis=1,
             )
 
             if distance_matrix is None:
@@ -429,7 +423,7 @@ def embed(args):
                     new_distance_matrix.index.values,
                     distance_matrix.index.values,
                 ):
-                    print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+                    print("ERROR: The given alignments do not have the same sequence names in the same order. Confirm your alignments have the same sequence names and sort your alignments (e.g., `seqkit sort -n alignment.fasta > sorted_alignment.fasta`) so they have the same order.", file=sys.stderr)
                     sys.exit(1)
 
                 distance_matrix += new_distance_matrix
@@ -488,7 +482,7 @@ def embed(args):
             )
         )
         if not all_alignments_have_same_sequence_names:
-            print("ERROR: The given alignments do not have the same sequence names.", file=sys.stderr)
+            print("ERROR: The given alignments do not have the same sequence names in the same order. Confirm your alignments have the same sequence names and sort your alignments (e.g., `seqkit sort -n alignment.fasta > sorted_alignment.fasta`) so they have the same order.", file=sys.stderr)
             sys.exit(1)
 
         # Combine matrix encodings for all alignments, after confirming that
