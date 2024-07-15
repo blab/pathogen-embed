@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.2.0
+
+### Features
+
+* admin: Publish to PyPI with GitHub Actions ([#30][])
+
+[#30]: https://github.com/blab/pathogen-embed/pull/30
+
 ## 2.1.0
 
 ### Features
@@ -36,7 +44,7 @@
 * Fix t-SNE keyword argument error associated with recent versions of scikit-learn ([#6][])
 * Pass random seed argument from the command line to PCA and MDS implementations ([#6][])
 
-[#6]: https://github.com/blab/pathogen-embed/pull/2
+[#6]: https://github.com/blab/pathogen-embed/pull/6
 
 ## 1.1.1
 
