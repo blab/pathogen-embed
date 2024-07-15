@@ -1,6 +1,9 @@
 name: Test pathogen-embed installation and interface
 
-on: push
+on:
+  push:
+    paths-ignore:
+      - '*.md'
 
 jobs:
   build:
