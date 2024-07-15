@@ -555,12 +555,11 @@ def embed(args):
     if external_embedding_parameters is not None and args.command != "pca":
         for key, value in external_embedding_parameters.items():
             if key in embedding_parameters:
-                value_type = type(embedding_parameters[key])
                 print(
-                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value_type(value)}' provided by '{args.embedding_parameters}'.",
+                    f"INFO: Replacing embedding parameter {key} value of '{embedding_parameters[key]}' with '{value}' provided by '{args.embedding_parameters}'.",
                     file=sys.stderr
                 )
-                embedding_parameters[key] = value_type(value)
+                embedding_parameters[key] = value
 
     if args.command != "pca":
         #TODO: distance matrices are no longer symmetrics/not square? Check into this
