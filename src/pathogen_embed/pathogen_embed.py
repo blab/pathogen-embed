@@ -509,7 +509,7 @@ def embed(args):
         #performing PCA on my pandas dataframe
         pca = PCA(
             n_components=n_components,
-            svd_solver='full',
+            svd_solver='auto',
             random_state=args.random_seed,
         )
         principalComponents = pca.fit_transform(genomes_df)
