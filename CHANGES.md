@@ -6,6 +6,11 @@
 
 * admin: Publish to PyPI with GitHub Actions ([#30][])
 
+### Bug Fixes
+
+* Use inferred types for external embedding parameters ([#29][])
+
+[#29]: https://github.com/blab/pathogen-embed/pull/29
 [#30]: https://github.com/blab/pathogen-embed/pull/30
 
 ## 2.1.0
