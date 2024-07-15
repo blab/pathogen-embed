@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.2.1
+
+### Bug Fixes
+
+* Let scikit-learn automatically pick SVD algorithm to use for PCA instead of hardcoding the "full" solver ([#31][])
+
+[#31]: https://github.com/blab/pathogen-embed/pull/31
+
 ## 2.2.0
 
 ### Features
