@@ -93,14 +93,16 @@ The clusters in the resulting embedding represent genetic diversity in each gene
 The following example shows how to apply this approach to alignments for seasonal influenza A/H3N2 HA and NA.
 
 Calculate a separate distance matrix per gene alignment for HA and NA.
+Note that alignments must have the same sequence names in the same order.
+If they do not, sort your alignments by sequence name with a tool like [seqkit](https://bioinf.shenwei.me/seqkit/) first (e.g., `seqkit sort -n alignment.fasta > alignment.sorted.fasta`).
 
 ```bash
 pathogen-distance \
-  --alignment tests/data/h3n2_ha_alignment.fasta \
+  --alignment tests/data/h3n2_ha_alignment.sorted.fasta \
   --output ha_distances.csv
 
 pathogen-distance \
-  --alignment tests/data/h3n2_na_alignment.fasta \
+  --alignment tests/data/h3n2_na_alignment.sorted.fasta \
   --output na_distances.csv
 ```
 
@@ -109,7 +111,7 @@ The t-SNE embedding gets initialized by a PCA embedding from the alignments.
 
 ```bash
 pathogen-embed \
-  --alignment tests/data/h3n2_ha_alignment.fasta tests/data/h3n2_na_alignment.fasta \
+  --alignment tests/data/h3n2_ha_alignment.sorted.fasta tests/data/h3n2_na_alignment.sorted.fasta \
   --distance-matrix ha_distances.csv na_distances.csv \
   --output-dataframe tsne.csv \
   --output-figure tsne.pdf \
