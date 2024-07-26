@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.3.0
+
+### Features
+
+* pathogen-cluster: Add `--distance-matrix` input argument to support HDBSCAN clustering of genetic distances from `pathogen-distance` ([#33][])
+
+[#33]: https://github.com/blab/pathogen-embed/pull/33
+
 ## 2.2.1
 
 ### Bug Fixes
