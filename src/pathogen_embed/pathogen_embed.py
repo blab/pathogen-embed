@@ -1,28 +1,15 @@
-# Ignore warnings from Numba deprecation:
-# https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
-# Numba is required by UMAP.
-from numba.core.errors import NumbaDeprecationWarning
-import warnings
-
-warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+import sys
 
 import matplotlib; matplotlib.set_loglevel("critical")
 import argparse
-import Bio.AlignIO
 import Bio.SeqIO
 from collections import OrderedDict
-import hdbscan
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
-import re
 from scipy.spatial.distance import squareform, pdist
-from scipy.stats import linregress
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE, MDS
-import sys
-from umap import UMAP
+
 
 def distance_tick_formatter(tick_val, tick_pos):
     return str(int(tick_val))
@@ -76,6 +63,8 @@ def encode_alignment_for_pca_by_integer(alignment_path):
     sequence.
 
     """
+    import re
+
     sequences_by_name = OrderedDict()
 
     for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
@@ -205,6 +194,8 @@ def encode_alignment_for_pca_by_biallelic(alignment_path):
     sequence.
 
     """
+    import Bio.AlignIO
+
     valid_nucleotides = {"A", "C", "G", "T"}
     alignment = Bio.AlignIO.read(alignment_path, "fasta")
     reference_sequence = str(alignment[0].seq)
@@ -356,6 +347,19 @@ def get_hamming_distances(genomes, count_indels=False):
     return hamming_distances
 
 def embed(args):
+    # Ignore warnings from Numba deprecation:
+    # https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+    # Numba is required by UMAP.
+    from numba.core.errors import NumbaDeprecationWarning
+    import warnings
+
+    warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+
+    from scipy.stats import linregress
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import TSNE, MDS
+    from umap import UMAP
+
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
 
@@ -673,6 +677,7 @@ def embed(args):
         plt.savefig(args.output_pairwise_distance_figure)
 
 def cluster(args):
+    import hdbscan
 
     if args.embedding:
         if args.embedding.endswith(".csv"):
