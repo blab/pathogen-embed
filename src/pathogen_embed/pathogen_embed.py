@@ -674,13 +674,23 @@ def embed(args):
 
 def cluster(args):
 
-    if not args.embedding.endswith('.csv'):
-        print("You must supply a CSV file for the embedding.", file=sys.stderr)
-        sys.exit(1)
-    else:
-        embedding_df = pd.read_csv(args.embedding, index_col=0)
+    if args.embedding:
+        if args.embedding.endswith(".csv"):
+            data_df = pd.read_csv(args.embedding, index_col=0)
+            metric = "euclidean"
+        else:
+            print("You must supply a CSV file for the embedding.", file=sys.stderr)
+            sys.exit(1)
+    elif args.distance_matrix:
+        if args.distance_matrix.endswith(".csv"):
+            data_df = pd.read_csv(args.distance_matrix, index_col=0)
+            metric = "precomputed"
+        else:
+            print("You must supply a CSV file for the distance matrix.", file=sys.stderr)
+            sys.exit(1)
 
     clustering_parameters = {
+        "metric": metric,
         **({"min_cluster_size": args.min_size} if args.min_size is not None else {}),
         **({"min_samples": args.min_samples} if args.min_samples is not None else {}),
         **({"cluster_selection_epsilon": args.distance_threshold} if args.distance_threshold is not None else {})
@@ -688,14 +698,15 @@ def cluster(args):
 
     clusterer = hdbscan.HDBSCAN(**clustering_parameters)
 
-    clusterer.fit(embedding_df)
-    embedding_df[args.label_attribute] = clusterer.labels_.astype(str)
+    data_df = data_df.astype(float)
+    clusterer.fit(data_df)
+    data_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:
 
         plot_data = {
-            "x": embedding_df.to_numpy()[:, 0],
-            "y": embedding_df.to_numpy()[:, 1],
+            "x": data_df.to_numpy()[:, 0],
+            "y": data_df.to_numpy()[:, 1],
         }
 
         plot_data["cluster"] = clusterer.labels_.astype(str)
@@ -722,7 +733,7 @@ def cluster(args):
         plt.close()
 
     if args.output_dataframe is not None:
-        embedding_df.to_csv(args.output_dataframe, index_label="strain")
+        data_df.to_csv(args.output_dataframe, index_label="strain")
 
 def calculate_distances_from_alignment(alignment_path, indel_distance):
     sequences_by_name = OrderedDict()

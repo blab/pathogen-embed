@@ -76,14 +76,30 @@ def make_parser_distance():
 def make_parser_cluster():
     parser = argparse.ArgumentParser(description = "HDBSCAN clustering for reduced dimension embeddings", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument("--embedding", required = True, help="The embedding to assign clustering labels to via HDBSCAN (https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html)")
-    parser.add_argument("--label-attribute", help="the name of the cluster used to label the column in the resulting dataframe")
-    parser.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
-    parser.add_argument("--min-size", type=int, default=5, help="minimum cluster size for HDBSCAN")
-    parser.add_argument("--min-samples", type=int, default=5, help="minimum number of sample to seed a cluster for HDBSCAN. Lowering this value reduces number of samples that do not get clustered.")
-    parser.add_argument("--distance-threshold", type=float, help="The float value for the distance threshold by which to cluster data in the embedding and assign labels via HDBSCAN. If no value is given in distance-threshold, the default distance threshold of 0.0 will be used.")
-    parser.add_argument("--output-dataframe", required = True, help="a csv file outputting the embedding with the strain name and its components.")
-    parser.add_argument("--output-figure", help="outputs a PDF with a plot of the embedding colored by cluster")
+    input_group = parser.add_argument_group(
+        "Input data",
+        "Choose an input data format from either an embedding or a distance matrix.",
+    )
+    exclusive_input_group = input_group.add_mutually_exclusive_group(required=True)
+    exclusive_input_group.add_argument("--embedding", help="an embedding to assign cluster labels to using Euclidean distance between input records")
+    exclusive_input_group.add_argument("--distance-matrix", help="a distance matrix to assign cluster labels to using the given precomputed values as the distance between input records")
+
+    options_group = parser.add_argument_group(
+        "Options",
+        "Options to control clustering",
+    )
+    options_group.add_argument("--label-attribute", help="the name of the cluster used to label the column in the resulting dataframe")
+    options_group.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
+    options_group.add_argument("--min-size", type=int, default=5, help="minimum cluster size for HDBSCAN")
+    options_group.add_argument("--min-samples", type=int, default=5, help="minimum number of sample to seed a cluster for HDBSCAN. Lowering this value reduces number of samples that do not get clustered.")
+    options_group.add_argument("--distance-threshold", type=float, help="The float value for the distance threshold by which to cluster data in the embedding and assign labels via HDBSCAN. If no value is given in distance-threshold, the default distance threshold of 0.0 will be used.")
+
+    output_group = parser.add_argument_group(
+        "Output",
+        "Output files produced by clustering"
+    )
+    output_group.add_argument("--output-dataframe", required = True, help="a csv file outputting the embedding with the strain name and its components.")
+    output_group.add_argument("--output-figure", help="outputs a PDF with a plot of the embedding colored by cluster")
 
     return parser
 
