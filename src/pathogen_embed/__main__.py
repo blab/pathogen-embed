@@ -1,7 +1,6 @@
 import argparse
 import sys
 from sys import argv
-from .pathogen_embed import embed, distance, cluster
 
 def autoOrFloat(values):
     if values == "auto":
@@ -105,12 +104,18 @@ def make_parser_cluster():
 
 def run_embed():
     args = make_parser_embed().parse_args(argv[1:])
+
+    from .pathogen_embed import embed
     return embed(args)
 
 def run_distance():
     args = make_parser_distance().parse_args(argv[1:])
+
+    from .pathogen_embed import distance
     return distance(args)
 
 def run_cluster():
     args = make_parser_cluster().parse_args(argv[1:])
+
+    from .pathogen_embed import cluster
     return cluster(args)
