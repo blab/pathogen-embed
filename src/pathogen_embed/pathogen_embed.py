@@ -1,28 +1,15 @@
-# Ignore warnings from Numba deprecation:
-# https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
-# Numba is required by UMAP.
-from numba.core.errors import NumbaDeprecationWarning
-import warnings
-
-warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+import sys
 
 import matplotlib; matplotlib.set_loglevel("critical")
 import argparse
-import Bio.AlignIO
 import Bio.SeqIO
 from collections import OrderedDict
-import hdbscan
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 import numpy as np
 import pandas as pd
-import re
 from scipy.spatial.distance import squareform, pdist
-from scipy.stats import linregress
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE, MDS
-import sys
-from umap import UMAP
+
 
 def distance_tick_formatter(tick_val, tick_pos):
     return str(int(tick_val))
@@ -76,6 +63,8 @@ def encode_alignment_for_pca_by_integer(alignment_path):
     sequence.
 
     """
+    import re
+
     sequences_by_name = OrderedDict()
 
     for sequence in Bio.SeqIO.parse(alignment_path, "fasta"):
@@ -205,6 +194,8 @@ def encode_alignment_for_pca_by_biallelic(alignment_path):
     sequence.
 
     """
+    import Bio.AlignIO
+
     valid_nucleotides = {"A", "C", "G", "T"}
     alignment = Bio.AlignIO.read(alignment_path, "fasta")
     reference_sequence = str(alignment[0].seq)
@@ -356,6 +347,19 @@ def get_hamming_distances(genomes, count_indels=False):
     return hamming_distances
 
 def embed(args):
+    # Ignore warnings from Numba deprecation:
+    # https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
+    # Numba is required by UMAP.
+    from numba.core.errors import NumbaDeprecationWarning
+    import warnings
+
+    warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
+
+    from scipy.stats import linregress
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import TSNE, MDS
+    from umap import UMAP
+
     # Setting Random seed for numpy
     np.random.seed(seed=args.random_seed)
 
@@ -673,14 +677,25 @@ def embed(args):
         plt.savefig(args.output_pairwise_distance_figure)
 
 def cluster(args):
+    import hdbscan
 
-    if not args.embedding.endswith('.csv'):
-        print("You must supply a CSV file for the embedding.", file=sys.stderr)
-        sys.exit(1)
-    else:
-        embedding_df = pd.read_csv(args.embedding, index_col=0)
+    if args.embedding:
+        if args.embedding.endswith(".csv"):
+            data_df = pd.read_csv(args.embedding, index_col=0)
+            metric = "euclidean"
+        else:
+            print("You must supply a CSV file for the embedding.", file=sys.stderr)
+            sys.exit(1)
+    elif args.distance_matrix:
+        if args.distance_matrix.endswith(".csv"):
+            data_df = pd.read_csv(args.distance_matrix, index_col=0)
+            metric = "precomputed"
+        else:
+            print("You must supply a CSV file for the distance matrix.", file=sys.stderr)
+            sys.exit(1)
 
     clustering_parameters = {
+        "metric": metric,
         **({"min_cluster_size": args.min_size} if args.min_size is not None else {}),
         **({"min_samples": args.min_samples} if args.min_samples is not None else {}),
         **({"cluster_selection_epsilon": args.distance_threshold} if args.distance_threshold is not None else {})
@@ -688,14 +703,15 @@ def cluster(args):
 
     clusterer = hdbscan.HDBSCAN(**clustering_parameters)
 
-    clusterer.fit(embedding_df)
-    embedding_df[args.label_attribute] = clusterer.labels_.astype(str)
+    data_df = data_df.astype(float)
+    clusterer.fit(data_df)
+    data_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:
 
         plot_data = {
-            "x": embedding_df.to_numpy()[:, 0],
-            "y": embedding_df.to_numpy()[:, 1],
+            "x": data_df.to_numpy()[:, 0],
+            "y": data_df.to_numpy()[:, 1],
         }
 
         plot_data["cluster"] = clusterer.labels_.astype(str)
@@ -722,7 +738,7 @@ def cluster(args):
         plt.close()
 
     if args.output_dataframe is not None:
-        embedding_df.to_csv(args.output_dataframe, index_label="strain")
+        data_df.to_csv(args.output_dataframe, index_label="strain")
 
 def calculate_distances_from_alignment(alignment_path, indel_distance):
     sequences_by_name = OrderedDict()
