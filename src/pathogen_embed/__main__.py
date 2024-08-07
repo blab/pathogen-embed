@@ -81,7 +81,7 @@ def make_parser_cluster():
     )
     exclusive_input_group = input_group.add_mutually_exclusive_group(required=True)
     exclusive_input_group.add_argument("--embedding", help="an embedding to assign cluster labels to using Euclidean distance between input records")
-    exclusive_input_group.add_argument("--distance-matrix", help="a distance matrix to assign cluster labels to using the given precomputed values as the distance between input records")
+    exclusive_input_group.add_argument("--distance-matrix", nargs="+", help="one or more distance matrix files to assign cluster labels to using the given precomputed values as the distance between input records")
 
     options_group = parser.add_argument_group(
         "Options",
