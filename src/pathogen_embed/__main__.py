@@ -89,7 +89,7 @@ def make_parser_cluster():
     )
     options_group.add_argument("--label-attribute", help="the name of the cluster used to label the column in the resulting dataframe")
     options_group.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
-    options_group.add_argument("--min-size", type=int, default=5, help="minimum cluster size for HDBSCAN")
+    options_group.add_argument("--min-size", type=int, default=10, help="minimum cluster size for HDBSCAN")
     options_group.add_argument("--min-samples", type=int, default=5, help="minimum number of sample to seed a cluster for HDBSCAN. Lowering this value reduces number of samples that do not get clustered.")
     options_group.add_argument("--distance-threshold", type=float, help="The float value for the distance threshold by which to cluster data in the embedding and assign labels via HDBSCAN. If no value is given in distance-threshold, the default distance threshold of 0.0 will be used.")
 
