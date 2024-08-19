@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 3.0.0
+
+### Major Changes
+
+* pathogen-embed: Use "simplex" encoding by default for PCA ([#35][])
+* pathogen-cluster: Change default minimum number of samples for a cluster from 5 to 10 ([#35][])
+
+[#35]: https://github.com/blab/pathogen-embed/pull/35
+
 ## 2.3.0
 
 ### Features
