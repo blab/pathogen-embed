@@ -34,7 +34,7 @@ def make_parser_embed():
     pca = subparsers.add_parser("pca", description="Principal Component Analysis", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     pca.add_argument(
         "--encoding",
-        default="integer",
+        default="simplex",
         choices=["integer", "genotype", "simplex", "biallelic"],
         help="""method to use to encode the given sequence alignment as a matrix for input to PCA.
         The "integer" encoding maps each ACGT nucleotide character to an integer (A to 1, G to 2, C to 3, T to 4) and all other characters to 5.
@@ -47,7 +47,7 @@ def make_parser_embed():
     pca.add_argument("--explained-variance", help="the path for the CSV explained variance for each component")
 
     tsne = subparsers.add_parser("t-sne", description="t-distributed Stochastic Neighborhood Embedding", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    tsne.add_argument("--pca-encoding", default="integer", choices=["integer", "genotype", "simplex", "biallelic"], help="method to use to encode the given sequence alignment as a matrix for input the PCA embedding that initializes the t-SNE embedding. See help for the PCA embedding subcommand for more details.")
+    tsne.add_argument("--pca-encoding", default="simplex", choices=["integer", "genotype", "simplex", "biallelic"], help="method to use to encode the given sequence alignment as a matrix for input the PCA embedding that initializes the t-SNE embedding. See help for the PCA embedding subcommand for more details.")
     tsne.add_argument("--components", default=2, type=int, help="the number of components for t-SNE")
     tsne.add_argument("--perplexity", default=30.0, type=float, help="The perplexity is related to the number of nearest neighbors. Because of this, the size of the dataset is proportional to the best perplexity value (large dataset -> large perplexity). Values between 5 and 50 work best. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
     tsne.add_argument("--learning-rate", default="auto", type=autoOrFloat, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
@@ -89,7 +89,7 @@ def make_parser_cluster():
     )
     options_group.add_argument("--label-attribute", help="the name of the cluster used to label the column in the resulting dataframe")
     options_group.add_argument("--random-seed", default = 314159, type=int, help="an integer used for reproducible results.")
-    options_group.add_argument("--min-size", type=int, default=5, help="minimum cluster size for HDBSCAN")
+    options_group.add_argument("--min-size", type=int, default=10, help="minimum cluster size for HDBSCAN")
     options_group.add_argument("--min-samples", type=int, default=5, help="minimum number of sample to seed a cluster for HDBSCAN. Lowering this value reduces number of samples that do not get clustered.")
     options_group.add_argument("--distance-threshold", type=float, help="The float value for the distance threshold by which to cluster data in the embedding and assign labels via HDBSCAN. If no value is given in distance-threshold, the default distance threshold of 0.0 will be used.")
 
