@@ -34,7 +34,7 @@ def make_parser_embed():
     pca = subparsers.add_parser("pca", description="Principal Component Analysis", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     pca.add_argument(
         "--encoding",
-        default="integer",
+        default="simplex",
         choices=["integer", "genotype", "simplex", "biallelic"],
         help="""method to use to encode the given sequence alignment as a matrix for input to PCA.
         The "integer" encoding maps each ACGT nucleotide character to an integer (A to 1, G to 2, C to 3, T to 4) and all other characters to 5.
@@ -47,7 +47,7 @@ def make_parser_embed():
     pca.add_argument("--explained-variance", help="the path for the CSV explained variance for each component")
 
     tsne = subparsers.add_parser("t-sne", description="t-distributed Stochastic Neighborhood Embedding", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    tsne.add_argument("--pca-encoding", default="integer", choices=["integer", "genotype", "simplex", "biallelic"], help="method to use to encode the given sequence alignment as a matrix for input the PCA embedding that initializes the t-SNE embedding. See help for the PCA embedding subcommand for more details.")
+    tsne.add_argument("--pca-encoding", default="simplex", choices=["integer", "genotype", "simplex", "biallelic"], help="method to use to encode the given sequence alignment as a matrix for input the PCA embedding that initializes the t-SNE embedding. See help for the PCA embedding subcommand for more details.")
     tsne.add_argument("--components", default=2, type=int, help="the number of components for t-SNE")
     tsne.add_argument("--perplexity", default=30.0, type=float, help="The perplexity is related to the number of nearest neighbors. Because of this, the size of the dataset is proportional to the best perplexity value (large dataset -> large perplexity). Values between 5 and 50 work best. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
     tsne.add_argument("--learning-rate", default="auto", type=autoOrFloat, help="The learning rate for t-SNE is usually between 10.0 and 1000.0. Values out of these bounds may create innacurate results. The default value is the value consistently the best for pathogen analyses, results from an exhaustive grid search.")
