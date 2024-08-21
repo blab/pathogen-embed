@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 3.1.0
+
+### Features
+
+* pathogen-cluster-mutations: Add this new top-level command to allow users to create a table of mutations that appear in clusters or other previously defined genetic groups ([#36][])
+
+[#36]: https://github.com/blab/pathogen-embed/pull/36
+
 ## 3.0.0
 
 ### Major Changes
