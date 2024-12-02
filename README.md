@@ -178,3 +178,19 @@ Run tests with cram.
 ``` bash
 cram --shell=/bin/bash tests
 ```
+
+## Citation
+
+```bibtex
+@article{10.1093/ve/veae087,
+    author = {Nanduri, Sravani and Black, Allison and Bedford, Trevor and Huddleston, John},
+    title = {Dimensionality reduction distills complex evolutionary relationships in seasonal influenza and {SARS-CoV-2}},
+    journal = {Virus Evolution},
+    pages = {veae087},
+    year = {2024},
+    month = {11},
+    issn = {2057-1577},
+    doi = {10.1093/ve/veae087},
+    url = {https://doi.org/10.1093/ve/veae087}
+}
+```
