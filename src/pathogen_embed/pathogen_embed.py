@@ -540,10 +540,11 @@ def embed(args):
     elif args.command == "mds":
         embedding_class = MDS
         embedding_parameters = {
-            "dissimilarity": "precomputed",
+            "init": "classical_mds",
+            "metric": "precomputed",
             "n_components": n_components,
             "n_jobs": 1,
-            "n_init": 2,
+            "n_init": 1,
             "random_state" : args.random_seed,
             "normalized_stress": False,
         }
