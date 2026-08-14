@@ -635,7 +635,7 @@ def embed(args):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=300)
         boxplot = ax.boxplot(
             grouped_euclidean_distances,
-            labels=list(genetic_distance_range),
+            tick_labels=list(genetic_distance_range),
             positions=list(genetic_distance_range),
             boxprops={
                 "linewidth": 0.25,
