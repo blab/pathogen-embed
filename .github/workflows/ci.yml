@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore:
       - '*.md'
+      - '*.yml'
 
   # Routinely check that tests pass with new versions of dependencies.
   schedule:
