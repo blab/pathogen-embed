@@ -355,7 +355,9 @@ def embed(args):
 
     warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 
+    import packaging.version
     from scipy.stats import linregress
+    import sklearn
     from sklearn.decomposition import PCA
     from sklearn.manifold import TSNE, MDS
     from umap import UMAP
@@ -540,13 +542,20 @@ def embed(args):
     elif args.command == "mds":
         embedding_class = MDS
         embedding_parameters = {
-            "dissimilarity": "precomputed",
             "n_components": n_components,
             "n_jobs": 1,
-            "n_init": 2,
+            "n_init": 1,
             "random_state" : args.random_seed,
             "normalized_stress": False,
         }
+
+        if packaging.version.parse(sklearn.__version__) >= packaging.version.parse("1.8"):
+            # Only use init and metric arguments in later versions of scikit-learn that support them:
+            # https://scikit-learn.org/stable/modules/generated/sklearn.manifold.MDS.html#sklearn.manifold.MDS
+            embedding_parameters["init"] = "classical_mds"
+            embedding_parameters["metric"] = "precomputed"
+        else:
+            embedding_parameters["dissimilarity"] = "precomputed"
 
     # Override defaults with parameter values passed through embedding parameters, if
     # possible.
@@ -634,7 +643,7 @@ def embed(args):
         fig, ax = plt.subplots(1, 1, figsize=(8, 8), dpi=300)
         boxplot = ax.boxplot(
             grouped_euclidean_distances,
-            labels=list(genetic_distance_range),
+            tick_labels=list(genetic_distance_range),
             positions=list(genetic_distance_range),
             boxprops={
                 "linewidth": 0.25,
@@ -704,7 +713,7 @@ def cluster(args):
     clusterer = hdbscan.HDBSCAN(**clustering_parameters)
 
     data_df = data_df.astype(float)
-    clusterer.fit(data_df)
+    clusterer.fit(data_df.values)
     data_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:

@@ -7,7 +7,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name='pathogen-embed',
-    version='3.1.0',
+    version='4.0.0',
     description='Reduced dimension embeddings for pathogen sequences',
     url='https://github.com/blab/pathogen-embed/',
     author='Sravani Nanduri <nandsra@cs.washington.edu> , John Huddleston <huddlej@gmail.com>',
@@ -26,12 +26,9 @@ setup(
     install_requires=['numpy',
                       'pandas',
                       "biopython",
-                      'scikit-learn >=1.3,<1.5',
-                      'umap-learn ==0.5.*',
-                      # Pin Numba at maximum supported version for the pinned umap-learn version.
-                      # For more details see:
-                      # https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit
-                      'numba <0.59.0',
+                      'scikit-learn',
+                      'umap-learn',
+                      'numba',
                       'matplotlib',
                       'hdbscan'
                       ],
@@ -45,10 +42,11 @@ setup(
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
+        'Programming Language :: Python :: 3.14',
     ],
     entry_points = {
         "console_scripts": [
