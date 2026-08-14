@@ -705,7 +705,7 @@ def cluster(args):
     clusterer = hdbscan.HDBSCAN(**clustering_parameters)
 
     data_df = data_df.astype(float)
-    clusterer.fit(data_df)
+    clusterer.fit(data_df.values)
     data_df[args.label_attribute] = clusterer.labels_.astype(str)
 
     if args.output_figure is not None:
