@@ -355,7 +355,9 @@ def embed(args):
 
     warnings.simplefilter('ignore', category=NumbaDeprecationWarning)
 
+    import packaging.version
     from scipy.stats import linregress
+    import sklearn
     from sklearn.decomposition import PCA
     from sklearn.manifold import TSNE, MDS
     from umap import UMAP
@@ -540,14 +542,20 @@ def embed(args):
     elif args.command == "mds":
         embedding_class = MDS
         embedding_parameters = {
-            "init": "classical_mds",
-            "metric": "precomputed",
             "n_components": n_components,
             "n_jobs": 1,
             "n_init": 1,
             "random_state" : args.random_seed,
             "normalized_stress": False,
         }
+
+        if packaging.version.parse(sklearn.__version__) >= packaging.version.parse("1.8"):
+            # Only use init and metric arguments in later versions of scikit-learn that support them:
+            # https://scikit-learn.org/stable/modules/generated/sklearn.manifold.MDS.html#sklearn.manifold.MDS
+            embedding_parameters["init"] = "classical_mds"
+            embedding_parameters["metric"] = "precomputed"
+        else:
+            embedding_parameters["dissimilarity"] = "precomputed"
 
     # Override defaults with parameter values passed through embedding parameters, if
     # possible.
