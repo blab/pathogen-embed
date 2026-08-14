@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 4.0.0
+
+### Major Changes
+
+* Update dependencies, removing hardcoded pins on all dependency versions ([#38][])
+
+[#38]: https://github.com/blab/pathogen-embed/pull/38
+
 ## 3.1.0
 
 ### Features
