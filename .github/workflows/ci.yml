@@ -5,6 +5,11 @@ on:
     paths-ignore:
       - '*.md'
 
+  # Routinely check that tests pass with new versions of dependencies.
+  schedule:
+    # Every day at 17:30 UTC / 9:30 Seattle (winter) / 10:30 Seattle (summer)
+    - cron: "30 17 * * *"
+
 jobs:
   build:
 
